@@ -1,0 +1,40 @@
+{
+  "name": "frontend",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test:e2e": "playwright test",
+    "lint:oxlint": "oxlint . --fix -D correctness --ignore-path .gitignore",
+    "lint:eslint": "eslint . --fix",
+    "lint": "run-s lint:*",
+    "format": "prettier --write src/"
+  },
+  "dependencies": {
+    "@eshengsky/vue-card-swipe": "^1.0.2",
+    "axios": "^1.9.0",
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.0",
+    "vue-swipy": "^0.1.1"
+  },
+  "devDependencies": {
+    "@fortawesome/fontawesome-free": "^6.5.2",
+    "@eslint/js": "^9.22.0",
+    "@playwright/test": "^1.51.1",
+    "@vitejs/plugin-vue": "^5.2.3",
+    "@vue/eslint-config-prettier": "^10.2.0",
+    "eslint": "^9.22.0",
+    "eslint-plugin-oxlint": "^0.16.0",
+    "eslint-plugin-playwright": "^2.2.0",
+    "eslint-plugin-vue": "~10.0.0",
+    "globals": "^16.0.0",
+    "npm-run-all2": "^7.0.2",
+    "oxlint": "^0.16.0",
+    "prettier": "3.5.3",
+    "vite": "^6.2.4",
+    "vite-plugin-vue-devtools": "^7.7.2"
+  }
+}
