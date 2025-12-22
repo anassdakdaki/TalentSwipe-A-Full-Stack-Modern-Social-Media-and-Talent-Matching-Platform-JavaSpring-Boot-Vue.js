@@ -31,3 +31,9 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Local environment overrides
+.env
+*.env
+src/main/resources/application-local.properties
+application-local.properties
