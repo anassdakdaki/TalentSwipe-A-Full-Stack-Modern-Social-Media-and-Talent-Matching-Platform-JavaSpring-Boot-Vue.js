@@ -1,0 +1,7 @@
+# Artifacts used during history rewrite/redaction
+replace.txt
+DB_PASSWORD_REDACTED
+
+# Local env files (if created at repo root)
+.env
+*.env
