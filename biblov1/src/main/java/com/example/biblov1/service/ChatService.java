@@ -8,6 +8,7 @@ import com.example.biblov1.repository.ChatRoomRepository;
 import com.example.biblov1.repository.MessageRepository;
 import com.example.biblov1.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,8 +46,8 @@ public class ChatService {
                 .orElseThrow(() -> new RuntimeException("Sender not found"));
 
         // Ensure sender is part of the chat room
-        if (!chatRoom.getUser1().equals(sender) && !chatRoom.getUser2().equals(sender)) {
-            throw new IllegalArgumentException("Sender is not a participant of this chat room.");
+        if (!isParticipant(chatRoom, senderId)) {
+            throw new AccessDeniedException("Sender is not a participant of this chat room.");
         }
 
         Message message = new Message();
@@ -57,9 +58,12 @@ public class ChatService {
     }
 
     @Transactional(readOnly = true)
-    public List<Message> getMessagesByChatRoom(Long chatRoomId) {
+    public List<Message> getMessagesByChatRoom(Long chatRoomId, Long requesterId) {
         ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
                 .orElseThrow(() -> new RuntimeException("ChatRoom not found"));
+        if (!isParticipant(chatRoom, requesterId)) {
+            throw new AccessDeniedException("User is not a participant of this chat room.");
+        }
         return messageRepository.findByChatRoomOrderByTimestampAsc(chatRoom);
     }
 
@@ -88,5 +92,14 @@ public class ChatService {
             // Create a new chat room
             return createChatRoom(u1, u2, studyMatch);
         }
+    }
+
+    private boolean isParticipant(ChatRoom chatRoom, Long userId) {
+        if (userId == null) {
+            return false;
+        }
+        Long user1Id = chatRoom.getUser1() != null ? chatRoom.getUser1().getId() : null;
+        Long user2Id = chatRoom.getUser2() != null ? chatRoom.getUser2().getId() : null;
+        return userId.equals(user1Id) || userId.equals(user2Id);
     }
 } 

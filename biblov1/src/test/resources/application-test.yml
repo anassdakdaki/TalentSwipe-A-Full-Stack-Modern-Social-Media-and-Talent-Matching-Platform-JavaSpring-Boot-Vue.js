@@ -1,0 +1,28 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:biblov1_test;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        dialect: org.hibernate.dialect.H2Dialect
+        globally_quoted_identifiers: true
+        globally_quoted_identifiers_skip_column_definitions: true
+
+app:
+  jwtSecret: "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="
+  jwtExpirationMs: 86400000
+  cors:
+    allowed-origins: "*"
+
+logging:
+  level:
+    root: WARN
+    org.springframework.security: WARN
+    org.springframework.web: WARN
