@@ -11,6 +11,8 @@ import com.example.biblov1.payload.request.SendMessageRequest;
 import com.example.biblov1.payload.request.FindOrCreateChatRoomRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -40,9 +42,15 @@ public class ChatController {
     }
 
     @GetMapping("/rooms/{chatRoomId}/messages")
-    public ResponseEntity<List<Message>> getChatRoomMessages(@PathVariable Long chatRoomId) {
-        List<Message> messages = chatService.getMessagesByChatRoom(chatRoomId);
-        return ResponseEntity.ok(messages);
+    public ResponseEntity<?> getChatRoomMessages(@PathVariable Long chatRoomId, @RequestAttribute("userId") Long userId) {
+        try {
+            List<Message> messages = chatService.getMessagesByChatRoom(chatRoomId, userId);
+            return ResponseEntity.ok(messages);
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+        }
     }
 
     @PostMapping("/send")
@@ -50,8 +58,8 @@ public class ChatController {
         try {
             Message message = chatService.saveMessage(request.getChatRoomId(), senderId, request.getContent());
             return ResponseEntity.ok(message);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
         } catch (RuntimeException e) {
             return ResponseEntity.internalServerError().body(Map.of("error", "Failed to send message: " + e.getMessage()));
         }

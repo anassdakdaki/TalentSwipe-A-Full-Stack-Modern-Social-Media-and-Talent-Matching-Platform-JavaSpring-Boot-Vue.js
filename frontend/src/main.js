@@ -5,14 +5,9 @@ import App from './App.vue'
 import router from './router'
 import axios from 'axios'
 
-// Configure axios defaults
-axios.defaults.baseURL = 'http://localhost:8080'
+// Configure axios base URL from env (defaults to local backend)
+axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
 
-// Create Vue app
 const app = createApp(App)
-
-// Use router
 app.use(router)
-
-// Mount app
 app.mount('#app')

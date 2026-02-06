@@ -64,11 +64,11 @@
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
 
-        <!-- H2 Database for testing purposes (or change to your actual DB) -->
+        <!-- H2 Database for testing purposes -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
-            <scope>runtime</scope>
+            <scope>test</scope>
         </dependency>
 
         <!-- Spring Boot Starter for Thymeleaf (if you're using it for frontend) -->

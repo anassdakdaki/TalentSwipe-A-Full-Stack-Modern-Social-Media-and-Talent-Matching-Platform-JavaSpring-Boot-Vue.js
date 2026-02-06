@@ -44,7 +44,7 @@ npm run dev       # served at http://localhost:5173
 npm run build     # production bundle
 npm run preview   # preview build locally
 ```
-- Axios base URL is configured in `src/main.js` (`http://localhost:8080`); adjust if the API runs elsewhere.
+- Axios base URL is configured in `src/main.js` from `VITE_API_BASE_URL` (fallback `http://localhost:8080`). For prod, set `VITE_API_BASE_URL` to your deployed backend (see `frontend/.env.example`).
 - Lint: `npm run lint`.
 - E2E: `npx playwright install` (first time), then `npm run test:e2e`.
 

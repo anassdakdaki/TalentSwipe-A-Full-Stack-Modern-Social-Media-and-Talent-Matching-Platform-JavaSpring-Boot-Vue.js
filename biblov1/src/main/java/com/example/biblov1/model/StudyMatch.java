@@ -6,7 +6,12 @@ import lombok.Data;
 
 @Data
 @Entity
-@Table(name = "study_matches")
+@Table(
+        name = "study_matches",
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = {"user1_id", "user2_id"})
+        }
+)
 public class StudyMatch {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
