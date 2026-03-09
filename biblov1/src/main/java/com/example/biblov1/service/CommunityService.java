@@ -10,8 +10,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,14 +32,27 @@ public class CommunityService {
 
     @Transactional
     public Community createCommunity(String name, String description, Long ownerId, List<String> tags) {
+        return createCommunity(name, description, ownerId, tags, null);
+    }
+
+    @Transactional
+    public Community createCommunity(String name, String description, Long ownerId, List<String> tags, String imageUrl) {
         User owner = userRepository.findById(ownerId)
                 .orElseThrow(() -> new RuntimeException("Owner user not found"));
+
+        Set<String> normalizedTags = tags == null
+                ? new LinkedHashSet<>()
+                : tags.stream()
+                .filter(tag -> tag != null && !tag.trim().isEmpty())
+                .map(String::trim)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
 
         Community community = new Community();
         community.setName(name);
         community.setDescription(description);
+        community.setImageUrl(imageUrl);
         community.setOwner(owner);
-        community.setTags(new java.util.HashSet<>(tags));
+        community.setTags(normalizedTags);
         community = communityRepository.save(community);
 
         // Add owner as a member automatically

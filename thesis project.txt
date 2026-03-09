@@ -1,0 +1,2 @@
+[Placeholder restored by recovery script]
+The original contents of this file were removed by `git clean -fd` and were not recoverable from local session history.

@@ -126,6 +126,14 @@ public class AuthController {
         }
 
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        return ResponseEntity.ok(Map.of("id", userDetails.getId(), "email", userDetails.getEmail(), "username", userDetails.getUsername()));
+        String profilePictureUrl = userProfileRepository.findByUserId(userDetails.getId())
+                .map(UserProfile::getProfilePictureUrl)
+                .orElse(null);
+        return ResponseEntity.ok(Map.of(
+                "id", userDetails.getId(),
+                "email", userDetails.getEmail(),
+                "username", userDetails.getUsername(),
+                "profilePictureUrl", profilePictureUrl == null ? "" : profilePictureUrl
+        ));
     }
-} 
+}

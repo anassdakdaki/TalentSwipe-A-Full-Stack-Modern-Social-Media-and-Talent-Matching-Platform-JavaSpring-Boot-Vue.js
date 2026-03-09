@@ -5,6 +5,7 @@ import com.example.biblov1.model.Post;
 import com.example.biblov1.model.User;
 import com.example.biblov1.repository.CommentRepository;
 import com.example.biblov1.repository.PostRepository;
+import com.example.biblov1.repository.UserProfileRepository;
 import com.example.biblov1.repository.UserRepository;
 import com.example.biblov1.payload.response.CommentResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +13,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -20,12 +23,19 @@ public class CommentService {
 
     private final CommentRepository commentRepository;
     private final PostRepository postRepository;
+    private final UserProfileRepository userProfileRepository;
     private final UserRepository userRepository;
 
     @Autowired
-    public CommentService(CommentRepository commentRepository, PostRepository postRepository, UserRepository userRepository) {
+    public CommentService(
+            CommentRepository commentRepository,
+            PostRepository postRepository,
+            UserProfileRepository userProfileRepository,
+            UserRepository userRepository
+    ) {
         this.commentRepository = commentRepository;
         this.postRepository = postRepository;
+        this.userProfileRepository = userProfileRepository;
         this.userRepository = userRepository;
     }
 
@@ -52,11 +62,27 @@ public class CommentService {
     public List<CommentResponse> getCommentsByPost(Long postId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new RuntimeException("Post not found"));
-        return commentRepository.findByPostOrderByCreatedAtAsc(post).stream()
+
+        List<Comment> comments = commentRepository.findByPostOrderByCreatedAtAsc(post);
+        List<Long> authorIds = comments.stream()
+                .map(comment -> comment.getAuthor().getId())
+                .distinct()
+                .toList();
+        Map<Long, String> authorPicturesByUserId = new HashMap<>();
+        if (!authorIds.isEmpty()) {
+            authorPicturesByUserId.putAll(
+                    userProfileRepository.findByUserIdIn(authorIds).stream()
+                            .collect(Collectors.toMap(profile -> profile.getUser().getId(), profile -> profile.getProfilePictureUrl()))
+            );
+        }
+
+        return comments.stream()
                 .map(comment -> new CommentResponse(
                     comment.getId(),
                     comment.getContent(),
+                    comment.getAuthor().getId(),
                     comment.getAuthor().getName(),
+                    authorPicturesByUserId.get(comment.getAuthor().getId()),
                     comment.getPost().getId(),
                     comment.getCreatedAt(),
                     comment.getUpdatedAt()

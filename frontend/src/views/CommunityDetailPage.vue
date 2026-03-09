@@ -1,111 +1,214 @@
 <template>
   <div class="community-detail-page">
-    <div class="header-section">
-      <h2 class="page-title">Community Posts</h2>
-      <button @click="openCreatePostModal" class="create-post-button">
-        <i class="fas fa-plus-circle"></i> Create New Post
-      </button>
-    </div>
+    <div class="page-shell">
+      <p v-if="loadingCommunity" class="loading-message">Loading community details...</p>
 
-    <p v-if="loadingPosts" class="loading-message">Loading posts...</p>
-    <p v-if="postError" class="error-message">{{ postError }}</p>
-
-    <div v-if="posts.length === 0 && !loadingPosts && !postError" class="no-posts-message">
-      No posts yet. Be the first to create one!
-    </div>
-
-    <div class="posts-grid" v-else>
-      <div v-for="post in posts" :key="post.id" class="post-card glass-effect">
-        <div class="post-header">
-          <i class="fas fa-user-circle post-avatar"></i>
-          <div class="author-info">
-            <span class="post-author">{{ post.authorName }}</span>
-            <span class="post-date">{{ new Date(post.createdAt).toLocaleString() }}</span>
+      <section v-else-if="community" class="community-hero">
+        <div class="hero-cover-wrap">
+          <img v-if="community.imageUrl" :src="community.imageUrl" :alt="`${community.name} cover`" class="hero-cover" />
+          <div v-else class="hero-cover hero-fallback">
+            <i class="fas fa-graduation-cap"></i>
           </div>
         </div>
-        <p class="post-content">{{ post.content }}</p>
-        <img v-if="post.imageUrl" :src="`http://localhost:8080${post.imageUrl}`" alt="Post Image" class="post-image"/>
-        <div class="post-hashtags">
-          <span v-for="hashtag in post.hashtags" :key="hashtag" class="tag-pill">#{{ hashtag }}</span>
-        </div>
-        <div class="post-actions">
-          <button @click="toggleLike(post)" class="action-button minimal-button">
-            <i :class="[post.isLiked ? 'fas' : 'far', 'fa-heart']" :style="{ color: post.isLiked ? '#00bfff' : '#64ffda' }"></i> 
-            Like <span v-if="post.likesCount > 0">({{ post.likesCount }})</span>
-          </button>
-          <button @click="toggleComments(post)" class="action-button minimal-button"><i class="far fa-comment"></i> Comment</button>
-          <button class="action-button minimal-button"><i class="fas fa-share-alt"></i> Share</button>
-          <!-- Delete Button (only visible to post author) -->
-          <button v-if="currentUserId === post.authorId" @click="confirmDeletePost(post)" class="action-button minimal-button delete-button">
-            <i class="fas fa-trash-alt"></i> Delete
-          </button>
-        </div>
 
-        <!-- Comments Section -->
-        <div v-if="post.showComments" class="comments-section">
-          <div class="comment-list">
-            <!-- Individual comments will be displayed here -->
-            <div v-if="post.comments && post.comments.length > 0">
-              <div v-for="comment in post.comments" :key="comment.id" class="comment-item">
-                <span class="comment-author">{{ comment.authorName }}: </span>
-                <span class="comment-content">{{ comment.content }}</span>
-                <span class="comment-date">{{ new Date(comment.createdAt).toLocaleString() }}</span>
+        <div class="hero-content">
+          <h1>{{ community.name }}</h1>
+          <p class="hero-description">{{ community.description }}</p>
+          <div class="hero-meta">
+            <span><i class="fas fa-users"></i> {{ memberCount }} members</span>
+            <span><i class="fas fa-user-shield"></i> Owner: {{ ownerName }}</span>
+          </div>
+          <div class="hero-tags" v-if="community.tags && community.tags.length">
+            <span v-for="tag in community.tags" :key="tag" class="tag-pill">#{{ tag }}</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="posts-header">
+        <h2 class="page-title">Community Posts</h2>
+        <button @click="openCreatePostModal" class="create-post-button">
+          <i class="fas fa-plus-circle"></i>
+          Create New Post
+        </button>
+      </section>
+
+      <p v-if="loadingPosts" class="loading-message">Loading posts...</p>
+      <p v-if="postError" class="error-message">{{ postError }}</p>
+
+      <div v-if="posts.length === 0 && !loadingPosts && !postError" class="no-posts-message">
+        No posts yet. Be the first to create one.
+      </div>
+
+      <div class="posts-grid" v-else>
+        <article v-for="post in posts" :key="post.id" class="post-card">
+          <div class="post-header">
+            <button type="button" class="author-button" @click="openProfileModal(post.authorId)">
+              <img
+                v-if="post.authorProfilePictureUrl"
+                :src="normalizeMediaUrl(post.authorProfilePictureUrl)"
+                alt="Post author avatar"
+                class="post-avatar-image"
+              />
+              <div v-else class="post-avatar placeholder">
+                <i class="fas fa-user"></i>
               </div>
+              <div class="author-info">
+                <span class="post-author">{{ post.authorName }}</span>
+                <span class="post-date">{{ new Date(post.createdAt).toLocaleString() }}</span>
+              </div>
+            </button>
+          </div>
+
+          <p class="post-content">{{ post.content }}</p>
+          <img v-if="post.imageUrl" :src="normalizeMediaUrl(post.imageUrl)" alt="Post image" class="post-image" />
+
+          <div class="post-hashtags" v-if="post.hashtags && post.hashtags.length">
+            <span v-for="hashtag in post.hashtags" :key="hashtag" class="tag-pill">#{{ hashtag }}</span>
+          </div>
+
+          <div class="post-actions">
+            <button @click="toggleLike(post)" class="action-button minimal-button">
+              <i :class="[post.isLiked ? 'fas' : 'far', 'fa-heart', { liked: post.isLiked }]" />
+              Like <span v-if="post.likesCount > 0">({{ post.likesCount }})</span>
+            </button>
+            <button @click="toggleComments(post)" class="action-button minimal-button">
+              <i class="far fa-comment"></i>
+              {{ post.showComments ? 'Hide comments' : 'Comment' }}
+            </button>
+            <button class="action-button minimal-button"><i class="fas fa-share-alt"></i> Share</button>
+            <button
+              v-if="currentUserId === post.authorId"
+              @click="confirmDeletePost(post)"
+              class="action-button minimal-button delete-button"
+            >
+              <i class="fas fa-trash-alt"></i>
+              Delete
+            </button>
+          </div>
+
+          <div v-if="post.showComments" class="comments-section">
+            <div class="comment-list">
+              <div v-if="post.comments && post.comments.length > 0">
+                <div v-for="comment in post.comments" :key="comment.id" class="comment-item">
+                  <button
+                    type="button"
+                    class="comment-author-button"
+                    @click="openProfileModal(comment.authorId)"
+                  >
+                    <img
+                      v-if="comment.authorProfilePictureUrl"
+                      :src="normalizeMediaUrl(comment.authorProfilePictureUrl)"
+                      alt="Comment author avatar"
+                      class="comment-avatar"
+                    />
+                    <div v-else class="comment-avatar placeholder">
+                      <i class="fas fa-user"></i>
+                    </div>
+                  </button>
+                  <div class="comment-main">
+                    <div class="comment-meta">
+                      <button
+                        type="button"
+                        class="comment-author-link"
+                        @click="openProfileModal(comment.authorId)"
+                      >
+                        {{ comment.authorName }}
+                      </button>
+                      <span class="comment-date">{{ new Date(comment.createdAt).toLocaleString() }}</span>
+                    </div>
+                    <span class="comment-content">{{ comment.content }}</span>
+                  </div>
+                </div>
+              </div>
+              <p v-else class="no-comments-message">No comments yet.</p>
             </div>
-            <p v-else class="no-comments-message">No comments yet.</p>
           </div>
           <div class="comment-input-area">
-            <input type="text" v-model="post.newCommentContent" @keyup.enter="addComment(post)" placeholder="Write a comment..." class="comment-input">
-            <button @click="addComment(post)" class="action-button post-comment-button neon-effect">Post</button>
+            <img
+              v-if="currentUserProfilePictureUrl"
+              :src="normalizeMediaUrl(currentUserProfilePictureUrl)"
+              alt="Your avatar"
+              class="comment-avatar"
+            />
+            <div v-else class="comment-avatar placeholder">
+              <i class="fas fa-user"></i>
+            </div>
+            <input
+              type="text"
+              v-model="post.newCommentContent"
+              @focus="ensureCommentsLoaded(post)"
+              @keyup.enter="addComment(post)"
+              placeholder="Write a comment..."
+              class="comment-input"
+            />
+            <button @click="addComment(post)" class="action-button post-comment-button">Post</button>
           </div>
-        </div>
+        </article>
       </div>
     </div>
 
-    <!-- Create Post Modal -->
     <div v-if="showCreatePostModal" class="modal-overlay">
-      <div class="modal-content glass-effect">
+      <div class="modal-content">
         <h3>Create New Post</h3>
         <form @submit.prevent="submitCreatePost">
           <div class="form-group">
-            <label for="postContent">Content:</label>
+            <label for="postContent">Content</label>
             <textarea id="postContent" v-model="newPost.content" required></textarea>
           </div>
-          <div class="form-group">
-            <label for="postImageUrl">Upload Image (optional):</label>
-            <input type="file" id="postImageUrl" @change="handleImageUpload" accept="image/*">
-            <img v-if="imagePreviewUrl" :src="imagePreviewUrl" alt="Image Preview" class="image-preview">
+
+          <div class="form-group image-group">
+            <label for="postImageUrl">Upload Image (optional)</label>
+            <input type="file" id="postImageUrl" class="file-input" @change="handleImageUpload" accept="image/*" />
+            <div class="image-controls">
+              <label for="postImageUrl" class="action-button secondary-btn">Choose Image</label>
+              <button v-if="imagePreviewUrl" type="button" class="action-button ghost-btn" @click="clearImageSelection">Remove</button>
+            </div>
+            <img v-if="imagePreviewUrl" :src="imagePreviewUrl" alt="Image preview" class="image-preview" />
           </div>
+
           <div class="form-group">
-            <label for="postHashtags">Hashtags (comma-separated):</label>
-            <input type="text" id="postHashtags" v-model="newPostHashtagsInput">
+            <label for="postHashtags">Hashtags (comma-separated)</label>
+            <input type="text" id="postHashtags" v-model="newPostHashtagsInput" />
           </div>
+
           <div class="modal-actions">
-            <button type="submit" class="action-button create-button neon-effect">Create Post</button>
+            <button type="submit" class="action-button create-button">Create Post</button>
             <button type="button" @click="closeCreatePostModal" class="action-button cancel-button">Cancel</button>
           </div>
         </form>
       </div>
     </div>
 
-    <!-- Custom Alert Component for this page -->
-    <AppAlert 
+    <AppAlert
       ref="postAlert"
       :title="postAlertTitle"
       :message="postAlertMessage"
-      @closed="postAlertVisible = false" 
+      @closed="postAlertVisible = false"
+    />
+
+    <UserProfileModal
+      :visible="profileModalVisible"
+      :user-id="selectedProfileUserId"
+      :current-user-id="currentUserId"
+      @close="closeProfileModal"
+      @open-chat-requested="openChatFromModal"
     />
   </div>
 </template>
 
 <script>
 import axios from 'axios';
-import AppAlert from '@/components/AppAlert.vue'; // Ensure AppAlert is available
+import AppAlert from '@/components/AppAlert.vue';
+import UserProfileModal from '@/components/UserProfileModal.vue';
+import { findOrCreateChatRoom, getCurrentUser } from '@/utils/profileApi';
+
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(/\/+$/, '');
 
 export default {
   name: 'CommunityDetailPage',
   components: {
     AppAlert,
+    UserProfileModal,
   },
   props: {
     communityId: {
@@ -116,6 +219,7 @@ export default {
   data() {
     return {
       community: null,
+      memberCount: 0,
       posts: [],
       loadingCommunity: true,
       loadingPosts: true,
@@ -132,62 +236,88 @@ export default {
       postAlertTitle: '',
       postAlertMessage: '',
       postAlertVisible: false,
-      currentUserId: null, // To store the authenticated user's ID
+      currentUserId: null,
+      currentUserProfilePictureUrl: '',
+      profileModalVisible: false,
+      selectedProfileUserId: null,
     };
+  },
+  computed: {
+    ownerName() {
+      return this.community?.owner?.name || this.community?.owner?.email || 'Unknown';
+    },
   },
   async created() {
     await this.fetchCurrentUserId();
     if (this.currentUserId) {
-      await this.fetchCommunityDetails();
-      await this.fetchPosts();
+      await Promise.all([this.fetchCommunityDetails(), this.fetchCommunityMemberCount(), this.fetchPosts()]);
     }
   },
   watch: {
     newPostHashtagsInput(newVal) {
-      this.newPost.hashtags = newVal.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+      this.newPost.hashtags = newVal.split(',').map((tag) => tag.trim()).filter((tag) => tag.length > 0);
     },
   },
   methods: {
+    normalizeMediaUrl(url) {
+      if (!url) return '';
+      if (url.startsWith('http://') || url.startsWith('https://')) return url;
+      return `${API_BASE_URL}${url.startsWith('/') ? url : `/${url}`}`;
+    },
     async fetchCurrentUserId() {
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.get('http://localhost:8080/api/auth/me', {
-          headers: { Authorization: `Bearer ${token}` }
+        const response = await axios.get(`${API_BASE_URL}/api/auth/me`, {
+          headers: { Authorization: `Bearer ${token}` },
         });
         this.currentUserId = response.data.id;
+        this.currentUserProfilePictureUrl = this.normalizeMediaUrl(response.data.profilePictureUrl || '');
       } catch (error) {
         console.error('Error fetching current user ID for CommunityDetailPage:', error);
-        // Handle error, e.g., redirect to login or show a message
+        this.currentUserId = null;
+        this.currentUserProfilePictureUrl = '';
       }
     },
     async fetchCommunityDetails() {
       this.loadingCommunity = true;
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.get(`http://localhost:8080/api/communities/${this.communityId}`, {
-          headers: { Authorization: `Bearer ${token}` }
+        const response = await axios.get(`${API_BASE_URL}/api/communities/${this.communityId}`, {
+          headers: { Authorization: `Bearer ${token}` },
         });
-        this.community = response.data;
+        this.community = {
+          ...response.data,
+          imageUrl: this.normalizeMediaUrl(response.data?.imageUrl),
+        };
       } catch (error) {
         console.error('Error fetching community details:', error);
-        // Handle error, e.g., show a message
       } finally {
         this.loadingCommunity = false;
+      }
+    },
+    async fetchCommunityMemberCount() {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await axios.get(`${API_BASE_URL}/api/communities/${this.communityId}/members/count`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        this.memberCount = Number(response.data || 0);
+      } catch (error) {
+        this.memberCount = 0;
       }
     },
     async fetchPosts() {
       this.loadingPosts = true;
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.get(`http://localhost:8080/api/posts/community/${this.communityId}`, {
-          headers: { Authorization: `Bearer ${token}` }
+        const response = await axios.get(`${API_BASE_URL}/api/posts/community/${this.communityId}`, {
+          headers: { Authorization: `Bearer ${token}` },
         });
-        // Initialize each post with showComments and newCommentContent properties
-        this.posts = response.data.map(post => ({
+        this.posts = response.data.map((post) => ({
           ...post,
-          showComments: true, // Show comments by default
+          showComments: false,
+          comments: post.comments || [],
           newCommentContent: '',
-          // likesCount and isLiked are now provided by the backend in PostResponse
         }));
       } catch (error) {
         this.postError = 'Failed to load posts.';
@@ -202,24 +332,43 @@ export default {
       this.newPost.imageUrl = '';
       this.newPostHashtagsInput = '';
       this.selectedImageFile = null;
-      this.imagePreviewUrl = null; // Clear image preview
+      this.imagePreviewUrl = null;
     },
     closeCreatePostModal() {
       this.showCreatePostModal = false;
     },
+    clearImageSelection() {
+      this.selectedImageFile = null;
+      this.imagePreviewUrl = null;
+      const input = document.getElementById('postImageUrl');
+      if (input) input.value = '';
+    },
     handleImageUpload(event) {
       const file = event.target.files[0];
+      if (!file) {
+        this.selectedImageFile = null;
+        this.imagePreviewUrl = null;
+        return;
+      }
+
+      if (!file.type.startsWith('image/')) {
+        this.showPostAlert('Invalid File', 'Please choose an image file.');
+        return;
+      }
+
+      const tenMb = 10 * 1024 * 1024;
+      if (file.size > tenMb) {
+        this.showPostAlert('File Too Large', 'Image should be 10MB or smaller.');
+        return;
+      }
+
       this.selectedImageFile = file;
 
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          this.imagePreviewUrl = e.target.result; // Set preview URL
-        };
-        reader.readAsDataURL(file);
-      } else {
-        this.imagePreviewUrl = null;
-      }
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.imagePreviewUrl = e.target.result;
+      };
+      reader.readAsDataURL(file);
     },
     async submitCreatePost() {
       if (!this.currentUserId) {
@@ -230,7 +379,7 @@ export default {
       const formData = new FormData();
       formData.append('communityId', this.communityId);
       formData.append('content', this.newPost.content);
-      formData.append('hashtags', JSON.stringify(Array.from(this.newPost.hashtags))); // Send hashtags as JSON string
+      formData.append('hashtags', JSON.stringify(Array.from(this.newPost.hashtags)));
 
       if (this.selectedImageFile) {
         formData.append('imageFile', this.selectedImageFile);
@@ -238,15 +387,15 @@ export default {
 
       try {
         const token = localStorage.getItem('token');
-        await axios.post('http://localhost:8080/api/posts', formData, {
+        await axios.post(`${API_BASE_URL}/api/posts`, formData, {
           headers: {
             Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data', // Important for file uploads
-          }
+            'Content-Type': 'multipart/form-data',
+          },
         });
-        this.showPostAlert('Success', 'Post created successfully!');
+        this.showPostAlert('Success', 'Post created successfully.');
         this.closeCreatePostModal();
-        await this.fetchPosts(); // Refresh list of posts
+        await this.fetchPosts();
       } catch (error) {
         console.error('Error creating post:', error);
         this.showPostAlert('Error', `Failed to create post: ${error.response?.data?.error || error.message}`);
@@ -257,14 +406,18 @@ export default {
       this.postAlertMessage = message;
       this.$refs.postAlert.show();
     },
-    toggleComments(post) {
-      // No longer toggling, comments are visible by default. This method can now be removed or repurposed if needed.
-      // For now, I'll keep it but it won't do anything.
-      // If you want to keep the toggle functionality, let me know.
-      // post.showComments = !post.showComments;
-      // if (post.showComments && post.comments.length === 0) {
-      //   this.fetchCommentsForPost(post); 
-      // }
+    async toggleComments(post) {
+      post.showComments = !post.showComments;
+      if (post.showComments && (!post.comments || post.comments.length === 0)) {
+        await this.fetchCommentsForPost(post);
+      }
+    },
+    async ensureCommentsLoaded(post) {
+      if (post.showComments && post.comments && post.comments.length > 0) {
+        return;
+      }
+      post.showComments = true;
+      await this.fetchCommentsForPost(post);
     },
     async fetchCommentsForPost(post) {
       if (!this.currentUserId) {
@@ -273,10 +426,10 @@ export default {
       }
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.get(`http://localhost:8080/api/comments/post/${post.id}`, {
-          headers: { Authorization: `Bearer ${token}` }
+        const response = await axios.get(`${API_BASE_URL}/api/comments/post/${post.id}`, {
+          headers: { Authorization: `Bearer ${token}` },
         });
-        post.comments = response.data; // Directly assign comments as they now contain authorName
+        post.comments = Array.isArray(response.data) ? response.data : [];
       } catch (error) {
         console.error(`Error fetching comments for post ${post.id}:`, error);
         this.showPostAlert('Error', `Failed to load comments for post: ${error.response?.data?.error || error.message}`);
@@ -290,14 +443,10 @@ export default {
 
       try {
         const token = localStorage.getItem('token');
-        // Send API request to toggle like
-        await axios.post(`http://localhost:8080/api/likes/post/${post.id}`, {}, {
-          headers: { Authorization: `Bearer ${token}` }
+        await axios.post(`${API_BASE_URL}/api/likes/post/${post.id}`, {}, {
+          headers: { Authorization: `Bearer ${token}` },
         });
-
-        // Re-fetch posts to get the accurate like count and status from backend
         await this.fetchPosts();
-
       } catch (error) {
         console.error('Error toggling like:', error);
         this.showPostAlert('Error', `Failed to toggle like: ${error.response?.data?.error || error.message}`);
@@ -314,18 +463,64 @@ export default {
       }
       try {
         const token = localStorage.getItem('token');
-        const commentData = {
+        await axios.post(`${API_BASE_URL}/api/comments`, {
           postId: post.id,
           content: post.newCommentContent,
-        };
-        await axios.post('http://localhost:8080/api/comments', commentData, {
-          headers: { Authorization: `Bearer ${token}` }
+        }, {
+          headers: { Authorization: `Bearer ${token}` },
         });
-        post.newCommentContent = ''; // Clear input
-        await this.fetchCommentsForPost(post); // Refresh comments for the post
+        post.newCommentContent = '';
+        post.showComments = true;
+        await this.fetchCommentsForPost(post);
       } catch (error) {
         console.error('Error adding comment:', error);
         this.showPostAlert('Error', `Failed to add comment: ${error.response?.data?.error || error.message}`);
+      }
+    },
+    async confirmDeletePost(post) {
+      if (!post?.id) return;
+      const shouldDelete = window.confirm('Delete this post? This action cannot be undone.');
+      if (!shouldDelete) return;
+
+      try {
+        const token = localStorage.getItem('token');
+        await axios.delete(`${API_BASE_URL}/api/posts/${post.id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        this.showPostAlert('Success', 'Post deleted.');
+        await this.fetchPosts();
+      } catch (error) {
+        this.showPostAlert('Error', error.response?.data?.error || 'Failed to delete post.');
+      }
+    },
+    openProfileModal(userId) {
+      const numericId = Number(userId) || null;
+      if (!numericId) return;
+      this.selectedProfileUserId = numericId;
+      this.profileModalVisible = true;
+    },
+    closeProfileModal() {
+      this.profileModalVisible = false;
+      this.selectedProfileUserId = null;
+    },
+    async openChatFromModal(payload) {
+      try {
+        if (!this.currentUserId) {
+          const me = await getCurrentUser();
+          this.currentUserId = me.data?.id || null;
+        }
+        if (!this.currentUserId) return;
+
+        const response = await findOrCreateChatRoom({
+          user1Id: this.currentUserId,
+          user2Id: Number(payload.userId),
+          studyMatchId: Number(payload.matchId),
+        });
+
+        this.closeProfileModal();
+        this.$router.push({ name: 'Chat', params: { chatRoomId: response.data.id } });
+      } catch (error) {
+        this.showPostAlert('Error', error?.response?.data?.error || 'Unable to open chat.');
       }
     },
   },
@@ -333,598 +528,530 @@ export default {
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap');
-
 .community-detail-page {
-  padding: 40px;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-  color: #e0e0e0;
   min-height: 100vh;
-  font-family: 'Orbitron', sans-serif;
+  padding: 24px clamp(12px, 2vw, 26px) 110px;
+  background: var(--theme-page-background);
+  color: var(--theme-text-primary);
+}
+
+.community-hero {
+  border: 1px solid var(--theme-surface-border);
+  background: var(--theme-surface-elevated);
+  border-radius: 20px;
+  box-shadow: var(--theme-shadow-soft);
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(260px, 34%) minmax(0, 1fr);
+  margin-bottom: 20px;
+}
+
+.hero-cover-wrap {
+  min-height: 220px;
+  background: var(--theme-surface-1);
+}
+
+.hero-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hero-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.2rem;
+  color: var(--theme-accent);
+}
+
+.hero-content {
+  padding: 18px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-}
-
-.header-section {
-  width: 100%;
-  max-width: 1000px; /* Adjust max-width as needed */
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 40px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid rgba(100, 255, 218, 0.2); /* Neon border */
-}
-
-.page-title {
-  font-size: 3rem;
-  color: #64ffda;
-  text-shadow: 0 0 15px #64ffda, 0 0 30px rgba(100, 255, 218, 0.5);
-  margin: 0;
-  font-weight: 700;
-}
-
-.create-post-button {
-  background: linear-gradient(45deg, #00bfff, #007bff); /* Blue gradient */
-  color: #ffffff;
-  padding: 12px 25px;
-  border: none;
-  border-radius: 30px;
-  font-size: 1.1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 0 15px rgba(0, 191, 255, 0.4); /* Subtle blue glow */
-  display: flex;
-  align-items: center;
   gap: 10px;
 }
 
-.create-post-button:hover {
-  background: linear-gradient(45deg, #007bff, #00bfff);
-  box-shadow: 0 0 25px rgba(0, 191, 255, 0.6);
-  transform: translateY(-2px);
+.hero-content h1 {
+  margin: 0;
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
+  color: var(--theme-heading-color);
 }
 
-.create-post-button i {
-  color: #fff;
+.hero-description {
+  margin: 0;
+  color: var(--theme-text-secondary);
+  line-height: 1.6;
+}
+
+.hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.hero-meta span {
+  border: 1px solid var(--theme-chip-border);
+  background: var(--theme-chip-bg);
+  color: var(--theme-chip-text);
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hero-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.posts-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.page-title {
+  margin: 0;
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
+}
+
+.create-post-button {
+  border: none;
+  border-radius: 999px;
+  padding: 11px 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--theme-button-primary-bg);
+  color: var(--theme-button-primary-text);
+  font-weight: 700;
+  box-shadow: var(--theme-button-primary-shadow);
+  cursor: pointer;
+}
+
+.posts-grid {
+  width: min(700px, 100%);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.post-card {
+  border: 1px solid var(--theme-surface-border);
+  background: var(--theme-surface-elevated);
+  border-radius: 18px;
+  box-shadow: var(--theme-shadow-soft);
+  padding: 18px;
+}
+
+.post-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.author-button {
+  border: none;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.author-button:hover .post-author {
+  text-decoration: underline;
+}
+
+.post-avatar-image,
+.post-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+}
+
+.post-avatar-image {
+  object-fit: cover;
+}
+
+.post-avatar.placeholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--theme-text-subtle);
+  border: 1px solid var(--theme-surface-border);
+  background: var(--theme-surface-1);
+}
+
+.author-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.post-author {
+  font-weight: 700;
+  color: var(--theme-heading-color);
+}
+
+.post-date {
+  color: var(--theme-text-subtle);
+  font-size: 0.84rem;
+}
+
+.post-content {
+  margin: 0 0 12px;
+  color: var(--theme-text-secondary);
+  white-space: pre-wrap;
+  line-height: 1.55;
+}
+
+.post-image {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid var(--theme-surface-border);
+}
+
+.post-hashtags {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag-pill {
+  border-radius: 999px;
+  padding: 6px 10px;
+  border: 1px solid var(--theme-chip-border);
+  background: var(--theme-chip-bg);
+  color: var(--theme-chip-text);
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+.post-actions {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.action-button {
+  border: 1px solid var(--theme-button-secondary-border);
+  background: var(--theme-button-secondary-bg);
+  color: var(--theme-button-secondary-text);
+  border-radius: 11px;
+  padding: 9px 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.minimal-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.minimal-button i {
+  color: var(--theme-accent);
+}
+
+.minimal-button i.liked {
+  color: var(--theme-accent-strong);
+}
+
+.delete-button {
+  color: var(--theme-danger);
+  border-color: color-mix(in srgb, var(--theme-danger) 50%, var(--theme-button-secondary-border));
+}
+
+.delete-button i {
+  color: currentColor;
+}
+
+.comments-section {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--theme-divider);
+}
+
+.comment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.comment-item {
+  border: 1px solid var(--theme-surface-border);
+  border-radius: 10px;
+  background: var(--theme-surface-1);
+  padding: 8px 10px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.comment-author-button {
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  line-height: 0;
+}
+
+.comment-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: 0 0 30px;
+}
+
+.comment-avatar.placeholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--theme-surface-border);
+  background: var(--theme-surface-elevated);
+  color: var(--theme-text-subtle);
+}
+
+.comment-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.comment-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.comment-author {
+  font-weight: 700;
+  color: var(--theme-heading-color);
+}
+
+.comment-author-link {
+  border: none;
+  background: transparent;
+  color: var(--theme-heading-color);
+  font-weight: 700;
+  padding: 0;
+  cursor: pointer;
+}
+
+.comment-author-link:hover {
+  text-decoration: underline;
+}
+
+.comment-content {
+  color: var(--theme-text-primary);
+  line-height: 1.4;
+}
+
+.comment-date {
+  color: var(--theme-text-subtle);
+  font-size: 0.8rem;
+}
+
+.no-comments-message {
+  color: var(--theme-text-subtle);
+  text-align: center;
+}
+
+.comment-input-area {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.comment-input {
+  flex: 1;
+  border: 1px solid var(--theme-input-border);
+  border-radius: 10px;
+  background: var(--theme-input-bg);
+  color: var(--theme-input-text);
+  padding: 10px 12px;
+}
+
+.comment-input:focus {
+  outline: none;
+  border-color: var(--theme-accent);
+}
+
+.post-comment-button,
+.create-button {
+  border: none;
+  background: var(--theme-button-primary-bg);
+  color: var(--theme-button-primary-text);
+  box-shadow: var(--theme-button-primary-shadow);
 }
 
 .loading-message,
 .error-message,
 .no-posts-message {
   text-align: center;
-  font-size: 1.5rem;
-  color: rgba(224, 224, 224, 0.8);
-  margin-top: 50px;
-}
-
-.posts-grid {
-  display: flex; /* Change to flexbox for easier vertical stacking */
-  flex-direction: column; /* Stack items vertically */
-  gap: 30px;
-  width: 100%;
-  max-width: 600px; /* Adjust max-width for a single, centered column of posts */
-}
-
-.post-card {
-  width: 100%; /* Ensure each post card takes full width of the grid */
-  background: rgba(255, 255, 255, 0.05); /* Lighter glass base */
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border-radius: 12px; /* Slightly less rounded for a modern look */
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  transition: all 0.2s ease-in-out;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); /* Softer, more spread shadow */
-}
-
-.post-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4); /* Enhanced shadow on hover */
-  border-color: #00bfff; /* Subtle blue glow on hover */
-}
-
-.post-header {
-  display: flex;
-  align-items: center;
-  margin-bottom: 15px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08); /* Lighter separator */
-}
-
-.post-avatar {
-  font-size: 2.2rem;
-  color: #64ffda; /* Neon green for avatar */
-  margin-right: 12px;
-}
-
-.author-info {
-  display: flex;
-  flex-direction: column;
-  text-align: left;
-}
-
-.post-author {
-  font-size: 1.1rem;
-  color: #00bfff; /* Blue for author name */
-  font-weight: bold;
-  margin-bottom: 2px;
-}
-
-.post-date {
-  font-size: 0.85rem;
-  color: rgba(224, 224, 224, 0.6);
-}
-
-.post-content {
-  font-size: 1rem;
-  color: rgba(224, 224, 224, 0.9);
-  line-height: 1.6;
-  margin-bottom: 15px;
-  white-space: pre-wrap; /* Preserve whitespace and line breaks */
-  word-wrap: break-word;
-}
-
-.post-image {
-  max-width: 100%;
-  border-radius: 8px;
-  margin-top: 10px;
-  margin-bottom: 15px;
-  object-fit: cover;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.post-hashtags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: auto; /* Push hashtags to bottom if content is short */
-  margin-bottom: 15px; /* Space before actions */
-}
-
-.post-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  justify-content: flex-start;
-  align-items: center;
-  padding-top: 15px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.action-button.minimal-button {
-  min-width: 110px;
-  flex: 1 1 110px;
-  box-sizing: border-box;
-  text-align: center;
-}
-
-.minimal-button {
-  background: none;
-  border: none;
-  color: #64ffda; /* Neon green for icons/text */
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: color 0.2s ease, transform 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border-radius: 6px;
-}
-
-.minimal-button:hover {
-  color: #00bfff; /* Blue on hover */
-  transform: translateY(-2px);
-  background: rgba(100, 255, 218, 0.05); /* Very subtle background on hover */
-}
-
-.minimal-button i {
-  font-size: 1.1rem;
-}
-
-/* Reuse tag-pill styling from CommunitiesPage.vue or define here if needed */
-.tag-pill {
-  background: rgba(100, 255, 218, 0.1); /* Subtle green tag background */
-  color: #64ffda;
-  padding: 5px 12px;
-  border-radius: 15px;
-  font-size: 0.8rem;
-  backdrop-filter: blur(5px);
-  border: 1px solid rgba(100, 255, 218, 0.3);
-}
-
-/* Responsive adjustments for smaller screens */
-@media (max-width: 768px) {
-  .community-detail-page {
-    padding: 20px;
-  }
-
-  .header-section {
-    flex-direction: column;
-    align-items: center;
-    gap: 20px;
-    margin-bottom: 30px;
-  }
-
-  .page-title {
-    font-size: 2.2rem;
-    text-align: center;
-  }
-
-  .create-post-button {
-    width: 100%;
-    justify-content: center;
-    font-size: 1rem;
-    padding: 10px 20px;
-  }
-
-  .modal-content {
-    padding: 25px;
-  }
-
-  .modal-content h3 {
-    font-size: 1.5rem;
-    margin-bottom: 20px;
-  }
-
-  .form-group label {
-    font-size: 1rem;
-  }
-
-  .form-group input,
-  .form-group textarea {
-    padding: 10px;
-    font-size: 0.9rem;
-  }
-
-  .modal-actions {
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .action-button {
-    width: 100%;
-    padding: 10px 20px;
-    font-size: 0.9rem;
-  }
-
-  .posts-grid {
-    grid-template-columns: 1fr;
-    gap: 20px;
-  }
-
-  .post-card {
-    padding: 15px;
-  }
-
-  .post-author {
-    font-size: 1rem;
-  }
-
-  .post-date {
-    font-size: 0.75rem;
-  }
-
-  .post-content {
-    font-size: 0.9rem;
-  }
-
-  .post-actions {
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .minimal-button {
-    width: 100%;
-    justify-content: center;
-    font-size: 0.9rem;
-    padding: 10px;
-  }
-
-  .comments-section {
-    padding-top: 15px;
-  }
-
-  .comment-list {
-    max-height: 150px;
-  }
-
-  .comment-item {
-    padding: 8px 12px;
-  }
-
-  .comment-author,
-  .comment-content {
-    font-size: 0.9rem;
-  }
-
-  .comment-date {
-    font-size: 0.7rem;
-  }
-
-  .comment-input-area {
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .comment-input,
-  .post-comment-button {
-    width: 100%;
-  }
-}
-
-@media (max-width: 600px) {
-  .post-actions {
-    flex-direction: column;
-    gap: 10px;
-    align-items: stretch;
-  }
-  .action-button.minimal-button {
-    width: 100%;
-    min-width: 0;
-  }
-}
-
-.comments-section {
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.comment-list {
-  margin-bottom: 15px;
-  max-height: 200px; /* Limit height for scrollability */
-  overflow-y: auto;
-  padding-right: 10px;
-}
-
-.comment-item {
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 8px;
-  padding: 10px 15px;
-  margin-bottom: 10px;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 5px;
-}
-
-.comment-author {
-  font-weight: bold;
-  color: #00bfff;
-  font-size: 0.95rem;
-}
-
-.comment-content {
-  color: rgba(224, 224, 224, 0.9);
-  font-size: 0.95rem;
-  flex-grow: 1; /* Allow content to take up space */
-}
-
-.comment-date {
-  font-size: 0.75rem;
-  color: rgba(224, 224, 224, 0.6);
-  margin-left: auto; /* Push date to the right */
-}
-
-.no-comments-message {
-  color: rgba(224, 224, 224, 0.7);
-  font-style: italic;
-  font-size: 0.9rem;
-  text-align: center;
-  padding: 10px;
-}
-
-.comment-input-area {
-  display: flex;
-  gap: 10px;
-  margin-top: 15px;
-}
-
-.comment-input {
-  flex-grow: 1;
-  padding: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.1);
-  color: #e0e0e0;
-  font-size: 0.95rem;
-  outline: none;
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
-}
-
-.comment-input:focus {
-  border-color: #00bfff;
-  box-shadow: 0 0 8px rgba(0, 191, 255, 0.4);
-}
-
-.post-comment-button {
-  background: linear-gradient(45deg, #64ffda, #3be8b0);
-  color: #1a1a2e;
-  padding: 10px 15px;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  font-weight: bold;
-  box-shadow: 0 2px 10px rgba(100, 255, 218, 0.3);
-}
-
-.post-comment-button:hover {
-  background: linear-gradient(45deg, #3be8b0, #64ffda);
-  box-shadow: 0 4px 15px rgba(100, 255, 218, 0.5);
-  transform: translateY(-1px);
-}
-
-/* Override default minimal-button hover for like button when active */
-.minimal-button i.fas.fa-heart {
-  color: #00bfff !important; /* Force blue color for liked state */
-}
-
-.minimal-button i.fas.fa-heart:hover {
-  transform: scale(1.1); /* Slightly enlarge on hover when liked */
+  color: var(--theme-text-secondary);
+  margin: 20px 0;
 }
 
 .modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.7); /* Dark semi-transparent overlay */
+  inset: 0;
+  z-index: 1200;
+  background: rgba(2, 6, 23, 0.58);
   display: flex;
-  justify-content: center;
   align-items: center;
-  z-index: 1000;
+  justify-content: center;
+  padding: 16px;
 }
 
 .modal-content {
-  background: rgba(255, 255, 255, 0.08); /* Lighter glass base for modal */
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(15px);
-  -webkit-backdrop-filter: blur(15px);
-  border-radius: 20px;
-  padding: 40px;
-  width: 90%;
-  max-width: 500px;
-  max-height: 90vh; /* Set a maximum height for the modal */
-  overflow-y: auto; /* Enable vertical scrolling */
-  box-shadow: 0 10px 40px 0 rgba(31, 38, 135, 0.45);
-  color: #e0e0e0;
-  font-family: 'Roboto Mono', monospace;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+  width: min(620px, 96vw);
+  max-height: 90vh;
+  overflow-y: auto;
+  background: var(--theme-surface-elevated);
+  border: 1px solid var(--theme-surface-border);
+  border-radius: 18px;
+  box-shadow: var(--theme-shadow-strong);
+  padding: 22px;
 }
 
 .modal-content h3 {
-  color: #64ffda;
-  font-size: 2rem;
-  margin-bottom: 30px;
-  text-align: center;
-  text-shadow: 0 0 10px rgba(100, 255, 218, 0.6);
+  margin: 0 0 14px;
+  color: var(--theme-heading-color);
 }
 
 .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 12px;
 }
 
 .form-group label {
   display: block;
-  margin-bottom: 8px;
-  font-size: 1.1rem;
-  color: #64ffda; /* Neon green for labels */
+  margin-bottom: 6px;
+  color: var(--theme-text-secondary);
+  font-weight: 600;
 }
 
 .form-group input,
 .form-group textarea {
-  width: calc(100% - 24px); /* Account for padding */
-  padding: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.1);
-  color: #e0e0e0;
-  font-size: 1rem;
-  outline: none;
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--theme-input-border);
+  border-radius: 12px;
+  background: var(--theme-input-bg);
+  color: var(--theme-input-text);
+  padding: 10px 12px;
+}
+
+.form-group textarea {
+  min-height: 110px;
+  resize: vertical;
 }
 
 .form-group input:focus,
 .form-group textarea:focus {
-  border-color: #00bfff; /* Blue glow on focus */
-  box-shadow: 0 0 10px rgba(0, 191, 255, 0.5);
+  outline: none;
+  border-color: var(--theme-accent);
+}
+
+.file-input {
+  display: none;
+}
+
+.image-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.secondary-btn,
+.ghost-btn,
+.cancel-button {
+  border: 1px solid var(--theme-button-secondary-border);
+  background: var(--theme-button-secondary-bg);
+  color: var(--theme-button-secondary-text);
+}
+
+.secondary-btn,
+.ghost-btn {
+  width: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .image-preview {
-  max-width: 100%;
-  height: auto;
-  border-radius: 8px;
-  margin-top: 15px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 0 10px rgba(0, 191, 255, 0.3);
-}
-
-.form-group textarea {
-  resize: vertical;
-  min-height: 100px;
+  margin-top: 10px;
+  width: 100%;
+  max-height: 220px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid var(--theme-surface-border);
 }
 
 .modal-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 15px;
-  margin-top: 30px;
+  gap: 8px;
+  margin-top: 8px;
 }
 
-.action-button {
-  padding: 12px 30px;
-  border: none;
-  border-radius: 25px;
-  cursor: pointer;
-  font-size: 1rem;
-  font-weight: bold;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+html[data-theme='futuristic'] .page-title,
+html[data-theme='futuristic'] .hero-content h1 {
+  text-shadow: var(--theme-heading-glow);
 }
 
-.create-button {
-  background: linear-gradient(45deg, #64ffda, #3be8b0); /* Green gradient for create */
-  color: #1a1a2e;
-}
-
-.create-button:hover {
-  background: linear-gradient(45deg, #3be8b0, #64ffda);
-  box-shadow: 0 6px 20px rgba(100, 255, 218, 0.5);
-  transform: translateY(-2px);
-}
-
-.cancel-button {
-  background: rgba(255, 255, 255, 0.1); /* Subtle cancel button */
-  color: #e0e0e0;
-  box-shadow: none;
-}
-
-.cancel-button:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: translateY(-2px);
-}
-
-/* Responsive adjustments for smaller screens */
-@media (max-width: 768px) {
-  .modal-content {
-    padding: 25px;
+@media (max-width: 980px) {
+  .community-hero {
+    grid-template-columns: 1fr;
   }
 
-  .modal-content h3 {
-    font-size: 1.5rem;
-    margin-bottom: 20px;
+  .hero-cover-wrap {
+    min-height: 180px;
   }
 
-  .form-group label {
-    font-size: 1rem;
+  .posts-header {
+    flex-direction: column;
+    align-items: stretch;
   }
 
-  .form-group input,
-  .form-group textarea {
-    padding: 10px;
-    font-size: 0.9rem;
+  .create-post-button {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 760px) {
+  .community-detail-page {
+    padding: 14px 10px 92px;
   }
 
+  .post-actions,
+  .comment-input-area,
   .modal-actions {
     flex-direction: column;
-    gap: 10px;
   }
 
   .action-button {
     width: 100%;
-    padding: 10px 20px;
-    font-size: 0.9rem;
   }
 }
-</style> 
+</style>

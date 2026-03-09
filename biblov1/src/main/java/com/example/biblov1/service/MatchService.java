@@ -120,6 +120,33 @@ public class MatchService {
         return match;
     }
 
+    @Transactional
+    public StudyMatch ensureMatchedPair(Long userAId, Long userBId, String initialMessage, boolean sendInitialMessage) {
+        if (userAId == null || userBId == null) {
+            throw new IllegalArgumentException("Both user IDs are required.");
+        }
+        if (userAId.equals(userBId)) {
+            throw new IllegalArgumentException("Cannot match a user with themselves.");
+        }
+
+        User userA = userRepository.findById(userAId)
+                .orElseThrow(() -> new RuntimeException("User not found: " + userAId));
+        User userB = userRepository.findById(userBId)
+                .orElseThrow(() -> new RuntimeException("User not found: " + userBId));
+
+        StudyMatch match = createOrUpdateMatch(userA, userB);
+        try {
+            Long chatRoomId = chatService.findOrCreateChatRoom(userA.getId(), userB.getId(), match).getId();
+            if (sendInitialMessage && initialMessage != null && !initialMessage.isBlank()) {
+                chatService.saveMessage(chatRoomId, userA.getId(), initialMessage.trim());
+            }
+        } catch (Exception ex) {
+            logger.warn("Unable to initialize chat for match {}-{}: {}", userAId, userBId, ex.getMessage());
+        }
+
+        return match;
+    }
+
     public List<StudyMatch> getUserMatches(User user) {
         // Find matches where the user is either user1 or user2 and the status is MATCHED
         List<StudyMatch> matches1 = studyMatchRepository.findByUser1AndStatus(user, MatchStatus.MATCHED);
@@ -131,6 +158,22 @@ public class MatchService {
     public StudyMatch getStudyMatchById(Long matchId) {
         return studyMatchRepository.findById(matchId)
                 .orElseThrow(() -> new RuntimeException("StudyMatch not found with ID: " + matchId));
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<StudyMatch> findMatchedPair(Long userAId, Long userBId) {
+        if (userAId == null || userBId == null || userAId.equals(userBId)) {
+            return Optional.empty();
+        }
+
+        User lower = userRepository.findById(Math.min(userAId, userBId)).orElse(null);
+        User higher = userRepository.findById(Math.max(userAId, userBId)).orElse(null);
+        if (lower == null || higher == null) {
+            return Optional.empty();
+        }
+
+        return studyMatchRepository.findByUser1AndUser2(lower, higher)
+                .filter(match -> match.getStatus() == MatchStatus.MATCHED);
     }
 
     // The acceptMatch method seems specific to study groups, might not be needed for direct user matches

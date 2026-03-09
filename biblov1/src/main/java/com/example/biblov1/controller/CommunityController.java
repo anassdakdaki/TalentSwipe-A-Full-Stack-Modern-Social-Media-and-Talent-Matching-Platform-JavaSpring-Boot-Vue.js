@@ -4,17 +4,24 @@ import com.example.biblov1.model.Community;
 import com.example.biblov1.model.CommunityMember;
 import com.example.biblov1.model.User;
 import com.example.biblov1.service.CommunityService;
+import com.example.biblov1.service.FileStorageService;
 import com.example.biblov1.service.UserService;
 import com.example.biblov1.payload.request.CreateCommunityRequest;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @RestController
@@ -24,20 +31,69 @@ public class CommunityController {
 
     private final CommunityService communityService;
     private final UserService userService;
+    private final FileStorageService fileStorageService;
+    private final ObjectMapper objectMapper;
 
     @Autowired
-    public CommunityController(CommunityService communityService, UserService userService) {
+    public CommunityController(
+            CommunityService communityService,
+            UserService userService,
+            FileStorageService fileStorageService,
+            ObjectMapper objectMapper
+    ) {
         this.communityService = communityService;
         this.userService = userService;
+        this.fileStorageService = fileStorageService;
+        this.objectMapper = objectMapper;
     }
 
-    @PostMapping
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> createCommunity(@RequestAttribute("userId") Long ownerId, @RequestBody CreateCommunityRequest request) {
         try {
-            Community community = communityService.createCommunity(request.getName(), request.getDescription(), ownerId, request.getTags());
+            Community community = communityService.createCommunity(
+                    request.getName(),
+                    request.getDescription(),
+                    ownerId,
+                    request.getTags(),
+                    null
+            );
             return ResponseEntity.status(HttpStatus.CREATED).body(community);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> createCommunityWithImage(
+            @RequestAttribute("userId") Long ownerId,
+            @RequestParam("name") String name,
+            @RequestParam("description") String description,
+            @RequestParam(value = "tags", required = false) String tagsRaw,
+            @RequestParam(value = "imageFile", required = false) MultipartFile imageFile
+    ) {
+        try {
+            String imageUrl = null;
+            if (imageFile != null && !imageFile.isEmpty()) {
+                if (imageFile.getContentType() == null || !imageFile.getContentType().startsWith("image/")) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "Only image files are allowed for community cover."));
+                }
+                long maxRecommendedSize = 10L * 1024L * 1024L;
+                if (imageFile.getSize() > maxRecommendedSize) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "Image should be 10MB or smaller."));
+                }
+                imageUrl = fileStorageService.storeFile(imageFile);
+            }
+
+            Community community = communityService.createCommunity(
+                    name,
+                    description,
+                    ownerId,
+                    parseTags(tagsRaw),
+                    imageUrl
+            );
+            return ResponseEntity.status(HttpStatus.CREATED).body(community);
+        } catch (RuntimeException ex) {
+            return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
         }
     }
 
@@ -92,4 +148,31 @@ public class CommunityController {
         return ResponseEntity.ok(isMember);
     }
 
-} 
+    private List<String> parseTags(String rawTags) {
+        if (rawTags == null || rawTags.isBlank()) {
+            return List.of();
+        }
+
+        String normalized = rawTags.trim();
+        if (normalized.startsWith("[")) {
+            try {
+                String[] parsed = objectMapper.readValue(normalized, String[].class);
+                return Arrays.stream(parsed)
+                        .filter(Objects::nonNull)
+                        .map(String::trim)
+                        .filter(tag -> !tag.isEmpty())
+                        .distinct()
+                        .collect(Collectors.toList());
+            } catch (JsonProcessingException ignored) {
+                // fallback to CSV parsing below
+            }
+        }
+
+        return Arrays.stream(normalized.split(","))
+                .map(String::trim)
+                .filter(tag -> !tag.isEmpty())
+                .distinct()
+                .collect(Collectors.toList());
+    }
+
+}

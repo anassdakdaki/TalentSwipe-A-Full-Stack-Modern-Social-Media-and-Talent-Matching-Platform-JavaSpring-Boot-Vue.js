@@ -106,23 +106,23 @@
           <div class="checkbox-group">
             <label class="checkbox-item">
               <input type="checkbox" v-model="profile.lookingFor.studyPartner">
-              <span>🧠 Study Partner</span>
+              <span>Study Partner</span>
             </label>
             <label class="checkbox-item">
               <input type="checkbox" v-model="profile.lookingFor.languageExchange">
-              <span>🗣️ Language Exchange</span>
+              <span>Language Exchange</span>
             </label>
             <label class="checkbox-item">
               <input type="checkbox" v-model="profile.lookingFor.friendship">
-              <span>💬 Friendship</span>
+              <span>Friendship</span>
             </label>
             <label class="checkbox-item">
               <input type="checkbox" v-model="profile.lookingFor.networking">
-              <span>🤝 Networking</span>
+              <span>Networking</span>
             </label>
             <label class="checkbox-item">
               <input type="checkbox" v-model="profile.lookingFor.community">
-              <span>🌍 Community</span>
+              <span>Community</span>
             </label>
           </div>
         </div>
@@ -215,6 +215,7 @@
 
 <script>
 import axios from 'axios';
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(/\/+$/, '');
 
 export default {
   name: 'ProfilePage',
@@ -262,7 +263,7 @@ export default {
     async fetchProfile() {
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.get('http://localhost:8080/api/profiles/me', {
+        const response = await axios.get(`${API_BASE_URL}/api/profiles/me`, {
           headers: {
             Authorization: `Bearer ${token}`
           }
@@ -291,7 +292,7 @@ export default {
 
         // Prepend backend URL to profile picture URL if needed
         if (this.profile.profilePictureUrl && !this.profile.profilePictureUrl.startsWith('http')) {
-          this.profile.profilePictureUrl = `http://localhost:8080${this.profile.profilePictureUrl}`;
+          this.profile.profilePictureUrl = `${API_BASE_URL}${this.profile.profilePictureUrl}`;
         }
 
         this.loading = false;
@@ -331,7 +332,7 @@ export default {
     async removeProfilePicture() {
       try {
         const token = localStorage.getItem('token');
-        await axios.delete('http://localhost:8080/api/profiles/me/picture', {
+        await axios.delete(`${API_BASE_URL}/api/profiles/me/picture`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         this.profile.profilePictureUrl = null;
@@ -376,7 +377,7 @@ export default {
         const profileData = { ...this.profile };
         delete profileData.user; // Remove user object if present
 
-        await axios.put('http://localhost:8080/api/profiles/me', profileData, {
+        await axios.put(`${API_BASE_URL}/api/profiles/me`, profileData, {
           headers: { ...headers, 'Content-Type': 'application/json' }
         });
 
@@ -385,14 +386,14 @@ export default {
           const formData = new FormData();
           formData.append('profilePicture', this.selectedFile);
 
-          const pictureResponse = await axios.post('http://localhost:8080/api/profiles/me/picture', formData, {
+          const pictureResponse = await axios.post(`${API_BASE_URL}/api/profiles/me/picture`, formData, {
             headers: { ...headers, 'Content-Type': 'multipart/form-data' }
           });
 
           if (pictureResponse.data.profilePictureUrl) {
             let pictureUrl = pictureResponse.data.profilePictureUrl;
             if (!pictureUrl.startsWith('http')) {
-              pictureUrl = `http://localhost:8080${pictureUrl}`;
+              pictureUrl = `${API_BASE_URL}${pictureUrl}`;
             }
             this.profile.profilePictureUrl = pictureUrl;
           }
@@ -423,450 +424,353 @@ export default {
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
-
 .profile-page {
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); /* Dark gradient background */
-  color: #e0e0e0; /* Light text */
-  min-height: 100vh; /* Ensure it takes at least the full viewport height */
-  width: 100%; /* Ensure the profile page container takes full width */
-  /* Removed width: 100% and padding to see if it resolves side spaces */
-  /* padding: 20px; */
-  box-sizing: border-box; /* Include padding in width */
-  overflow-x: hidden; /* Hide horizontal overflow */
-  display: flex; /* Use flexbox for centering content */
-  flex-direction: column; /* Stack content vertically */
-  align-items: center; /* Center content horizontally */
-  justify-content: center; /* Center content vertically */
+  min-height: 100vh;
+  width: 100%;
+  padding: 24px clamp(12px, 2vw, 28px) 120px;
+  background: var(--theme-page-background);
+  color: var(--theme-text-primary);
 }
 
 .profile-page h2 {
-  text-align: center;
-  color: #64ffda;
-  margin-bottom: 20px;
+  width: min(var(--page-max-width), 100%);
+  margin: 0 auto 16px;
+  font-size: clamp(2rem, 2.9vw, 2.7rem);
+  color: var(--theme-heading-color);
+}
+
+.profile-page > div {
+  width: min(var(--page-max-width), 100%);
+  margin: 0 auto;
 }
 
 .profile-page form {
-    width: 100%;
-    max-width: 800px; /* Limit the form width */
-    background: rgba(255, 255, 255, 0.1); /* Glassmorphism background */
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 20px;
-    padding: 30px; /* Keep padding on the form itself */
-    box-sizing: border-box; /* Ensure padding is included in form's width */
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-    margin: 20px auto; /* Center the form and add vertical margin */
+  width: min(var(--page-max-width), 100%);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--page-content-gap);
 }
 
 .profile-section {
-    margin-bottom: 30px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--theme-surface-border);
+  background: var(--theme-surface-elevated);
+  border-radius: 18px;
+  box-shadow: var(--theme-shadow-soft);
+  padding: 18px;
 }
 
-.profile-section:last-child {
-    border-bottom: none;
-    margin-bottom: 0;
-    padding-bottom: 0;
+.profile-section:nth-of-type(1),
+.profile-section:nth-of-type(6),
+.profile-section:nth-of-type(7) {
+  grid-column: 1 / -1;
 }
 
 .profile-section h3 {
-    color: #64ffda;
-    margin-bottom: 15px;
-    font-size: 1.3rem;
+  color: var(--theme-heading-color);
+  margin: 0 0 12px;
+  font-size: 1.2rem;
 }
 
-/* Add styles for form groups, labels, inputs, etc. */
 .form-group {
-    margin-bottom: 15px;
+  margin-bottom: 12px;
 }
 
 .form-group label {
-    display: block;
-    margin-bottom: 5px;
-    color: #e0e0e0;
-    font-size: 1rem;
+  display: block;
+  margin-bottom: 6px;
+  color: var(--theme-text-secondary);
+  font-size: 0.92rem;
+  font-weight: 600;
 }
 
-.form-group input[type="text"],
-.form-group input[type="number"],
-.form-group input[type="url"],
+.form-group input[type='text'],
+.form-group input[type='number'],
+.form-group input[type='url'],
 .form-group textarea,
-.tags-input input[type="text"] {
-    width: 100%;
-    padding: 12px 15px;
-    background: #1a1a2e;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 10px;
-    color: #e0e0e0;
-    font-size: 1rem;
-    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.2);
-    transition: all 0.3s ease;
-    outline: none;
-}
-
+.tags-input input[type='text'],
 .form-group select,
 .language-selector select {
-    width: 100%;
-    padding: 12px 15px;
-    background: #1a1a2e; /* Consistent background */
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 10px;
-    color: #e0e0e0; /* Consistent text color */
-    font-size: 1rem;
-    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.2);
-    transition: all 0.3s ease;
-    outline: none;
-    -webkit-appearance: none; /* Remove default arrow on WebKit browsers */
-    -moz-appearance: none; /* Remove default arrow on Firefox */
-    appearance: none; /* Remove default arrow */
-    background-image: url('data:image/svg+xml;charset=UTF-8,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%2364ffda" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"%3E%3Cpolyline points="6 9 12 15 18 9">%3C/polyline%3E%3C/svg%3E');
-    background-repeat: no-repeat;
-    background-position: right 15px center;
-    background-size: 20px;
-    cursor: pointer;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 12px;
+  border: 1px solid var(--theme-input-border);
+  border-radius: 12px;
+  background: var(--theme-input-bg);
+  color: var(--theme-input-text);
+  font-size: 0.95rem;
+  outline: none;
 }
 
-.form-group input[type="text"]::placeholder,
-.form-group input[type="number"]::placeholder,
-.form-group input[type="url"]::placeholder,
+.form-group input::placeholder,
 .form-group textarea::placeholder,
-.tags-input input[type="text"]::placeholder {
-    color: rgba(224, 224, 224, 0.6);
+.tags-input input::placeholder {
+  color: var(--theme-input-placeholder);
 }
 
-.form-group input[type="text"]:focus,
-.form-group input[type="number"]:focus,
-.form-group input[type="url"]:focus,
+.form-group input:focus,
 .form-group textarea:focus,
-.tags-input input[type="text"]:focus {
-    outline: none;
-    border-color: #64ffda;
-}
-
+.tags-input input:focus,
 .form-group select:focus,
 .language-selector select:focus {
-    outline: none;
-    border-color: #64ffda;
+  border-color: var(--theme-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-accent) 18%, transparent);
 }
 
-.form-group select option {
-  background-color: #1a1a2e; /* Dark background for options */
-  color: #e0e0e0; /* Light text for options */
-  padding: 10px 15px;
-  font-size: 1rem; /* Ensure consistent font size for options */
-}
-
-.form-group select option:checked,
-.form-group select option:hover {
-  background-color: #64ffda; /* Accent color on hover/selected */
-  color: #1a1a2e; /* Dark text on hover/selected */
+.form-group textarea {
+  min-height: 110px;
+  resize: vertical;
 }
 
 .form-row {
-    display: flex;
-    gap: 20px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
 }
 
-.form-row .form-group {
-    flex: 1;
-}
-
-/* Profile Picture Styles */
 .profile-picture-section {
-    margin-bottom: 20px;
-    display: flex;
-    justify-content: center;
+  margin-bottom: 16px;
 }
 
 .profile-picture-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 15px;
+  display: flex;
+  gap: 16px;
+  align-items: center;
 }
 
 .profile-picture-preview {
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.1);
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  border: 1px solid var(--theme-surface-border);
+  background: var(--theme-surface-1);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .profile-picture-preview .preview-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .profile-picture-preview .placeholder {
-     font-size: 3rem;
-     color: rgba(255, 255, 255, 0.5);
-     text-align: center;
+  color: var(--theme-text-subtle);
+  text-align: center;
+  font-size: 1.8rem;
 }
 
 .profile-picture-preview .placeholder span {
-    display: block;
-    font-size: 0.8rem;
-    margin-top: 5px;
+  display: block;
+  font-size: 0.78rem;
+  margin-top: 4px;
 }
 
 .upload-controls {
-    display: flex;
-    gap: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .upload-button,
 .remove-picture-button {
-    background: rgba(100, 255, 218, 0.1);
-    color: #64ffda;
-    padding: 8px 15px;
-    border: 1px solid rgba(100, 255, 218, 0.3);
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    transition: background-color 0.3s ease, border-color 0.3s ease;
+  border-radius: 10px;
+  border: 1px solid var(--theme-button-secondary-border);
+  background: var(--theme-button-secondary-bg);
+  color: var(--theme-button-secondary-text);
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 700;
 }
 
 .upload-button:hover,
 .remove-picture-button:hover {
-    background: rgba(100, 255, 218, 0.2);
-    border-color: #64ffda;
+  filter: brightness(1.03);
 }
 
 .file-input {
-    display: none;
+  display: none;
 }
 
-/* Checkbox Group Styles */
 .checkbox-group {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 15px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .checkbox-item {
-    display: flex;
-    align-items: center;
-    color: #e0e0e0;
-    font-size: 1rem;
-    cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid var(--theme-chip-border);
+  background: var(--theme-chip-bg);
+  color: var(--theme-chip-text);
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 0.9rem;
 }
 
-.checkbox-item input[type="checkbox"] {
-    margin-right: 8px;
-    /* Custom checkbox styling if needed */
+.checkbox-item input[type='checkbox'] {
+  width: 14px;
+  height: 14px;
 }
 
-/* Tags Input Styles */
-.tags-input input[type="text"] {
-    margin-bottom: 10px;
+.tags-input input[type='text'] {
+  margin-bottom: 10px;
 }
 
 .tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .tag {
-    background: rgba(255, 255, 255, 0.15);
-    color: #ffffff;
-    padding: 6px 12px;
-    border-radius: 15px;
-    font-size: 0.9rem;
-    backdrop-filter: blur(5px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    display: flex;
-    align-items: center;
-    gap: 5px;
+  border: 1px solid var(--theme-chip-border);
+  background: var(--theme-chip-bg);
+  color: var(--theme-chip-text);
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 0.86rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
 }
 
 .remove-tag {
-    background: none;
-    border: none;
-    color: rgba(255, 255, 255, 0.7);
-    cursor: pointer;
-    font-size: 1rem;
-    padding: 0;
-    transition: color 0.3s ease;
-}
-
-.remove-tag:hover {
-    color: #ffffff;
-}
-
-/* Language Section Styles */
-.language-group {
-    margin-bottom: 20px;
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  font-size: 0.9rem;
 }
 
 .language-group h4 {
-    color: #64ffda;
-    margin-bottom: 10px;
-    font-size: 1.1rem;
+  color: var(--theme-text-primary);
+  margin-bottom: 10px;
+  font-size: 1rem;
 }
 
 .language-selector {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 15px;
-}
-
-.language-selector select {
-    flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 120px;
+  gap: 8px;
+  margin-bottom: 10px;
 }
 
 .language-selector .add-button {
-    background: #64ffda;
-    color: #1a1a2e;
-    padding: 10px 15px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 1rem;
-    transition: background-color 0.3s ease;
-}
-
-.language-selector .add-button:hover {
-    background: #3be8b0;
+  border: none;
+  border-radius: 10px;
+  background: var(--theme-button-primary-bg);
+  color: var(--theme-button-primary-text);
+  font-weight: 700;
+  cursor: pointer;
 }
 
 .language-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .language-item {
-    background: rgba(255, 255, 255, 0.1);
-    color: #e0e0e0;
-    padding: 8px 12px;
-    border-radius: 8px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  border: 1px solid var(--theme-surface-border);
+  background: var(--theme-surface-1);
+  color: var(--theme-text-primary);
+  padding: 8px 10px;
+  border-radius: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .language-item .remove-button {
-    background: none;
-    border: none;
-    color: rgba(255, 255, 255, 0.7);
-    cursor: pointer;
-    font-size: 1rem;
-    padding: 0;
-    transition: color 0.3s ease;
+  background: none;
+  border: none;
+  color: var(--theme-text-secondary);
+  cursor: pointer;
+  font-size: 1rem;
 }
 
-.language-item .remove-button:hover {
-    color: #ffffff;
-}
-
-/* Action Buttons Styles */
 .action-buttons {
-    display: flex;
-    gap: 15px;
-    justify-content: flex-end;
-    margin-top: 30px;
-    padding-top: 20px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
 }
 
 .save-button,
 .reset-button,
 .logout-button {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 8px;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: background-color 0.3s ease, opacity 0.3s ease;
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  font-weight: 700;
 }
 
 .save-button {
-    background: #64ffda;
-    color: #1a1a2e;
-}
-
-.save-button:hover:not(:disabled) {
-    background: #3be8b0;
-}
-
-.save-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+  border: none;
+  background: var(--theme-button-primary-bg);
+  color: var(--theme-button-primary-text);
+  box-shadow: var(--theme-button-primary-shadow);
 }
 
 .reset-button {
-    background: rgba(255, 255, 255, 0.15);
-    color: #e0e0e0;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-}
-
-.reset-button:hover {
-    background: rgba(255, 255, 255, 0.25);
+  border: 1px solid var(--theme-button-secondary-border);
+  background: var(--theme-button-secondary-bg);
+  color: var(--theme-button-secondary-text);
 }
 
 .logout-button {
-    background: rgba(255, 82, 82, 0.8);
-    color: white;
+  border: none;
+  background: var(--theme-button-danger-bg);
+  color: var(--theme-button-danger-text);
 }
 
-.logout-button:hover {
-    background: rgba(255, 82, 82, 1);
+.save-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
-/* Responsive Adjustments */
-@media screen and (max-width: 768px) {
-    .profile-page form {
-        padding: 20px;
-    }
+@media (max-width: 1080px) {
+  .profile-page form {
+    grid-template-columns: 1fr;
+  }
 
-    .profile-section {
-        margin-bottom: 20px;
-        padding-bottom: 15px;
-    }
-
-    .profile-section h3 {
-        font-size: 1.2rem;
-    }
-
-    .form-row {
-        flex-direction: column;
-        gap: 15px;
-    }
-
-    .upload-controls {
-        flex-direction: column;
-        gap: 10px;
-        width: 100%;
-    }
-
-    .upload-button,
-    .remove-picture-button {
-        text-align: center;
-    }
-
-     .language-selector {
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    .action-buttons {
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    .action-buttons button {
-        width: 100%;
-        text-align: center;
-    }
+  .profile-section:nth-of-type(1),
+  .profile-section:nth-of-type(6),
+  .profile-section:nth-of-type(7) {
+    grid-column: auto;
+  }
 }
-</style> 
+
+@media (max-width: 760px) {
+  .profile-page {
+    padding: 14px 10px 94px;
+  }
+
+  .profile-picture-container {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .form-row,
+  .language-selector {
+    grid-template-columns: 1fr;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+  }
+
+  .action-buttons button {
+    width: 100%;
+  }
+}
+</style>

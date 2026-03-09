@@ -4,6 +4,7 @@ import com.example.biblov1.model.Post;
 import com.example.biblov1.service.PostService;
 import com.example.biblov1.payload.request.CreatePostRequest;
 import com.example.biblov1.payload.request.UpdatePostRequest;
+import com.example.biblov1.payload.response.FeedPostsPageResponse;
 import com.example.biblov1.payload.response.PostResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -14,6 +15,8 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -73,6 +76,42 @@ public class PostController {
     public ResponseEntity<List<PostResponse>> getPostsByCommunity(@PathVariable Long communityId, @RequestAttribute("userId") Long userId) {
         List<PostResponse> posts = postService.getPostsByCommunity(communityId, userId);
         return ResponseEntity.ok(posts);
+    }
+
+    @GetMapping("/feed")
+    public ResponseEntity<?> getFeedPosts(
+            @RequestAttribute("userId") Long userId,
+            @RequestParam(value = "limit", required = false, defaultValue = "10") Integer limit,
+            @RequestParam(value = "cursorCreatedAt", required = false) String cursorCreatedAtRaw,
+            @RequestParam(value = "cursorPostId", required = false) Long cursorPostId
+    ) {
+        if (limit < 1 || limit > 30) {
+            return ResponseEntity.badRequest().body(Map.of("error", "limit must be between 1 and 30."));
+        }
+
+        LocalDateTime cursorCreatedAt = null;
+        if (cursorCreatedAtRaw != null && !cursorCreatedAtRaw.isBlank()) {
+            try {
+                cursorCreatedAt = LocalDateTime.parse(cursorCreatedAtRaw);
+            } catch (DateTimeParseException ex) {
+                return ResponseEntity.badRequest().body(
+                        Map.of("error", "cursorCreatedAt must be ISO local datetime (e.g., 2026-01-10T10:00:00).")
+                );
+            }
+        }
+
+        boolean hasCreatedAt = cursorCreatedAt != null;
+        boolean hasCursorPostId = cursorPostId != null;
+        if (hasCreatedAt != hasCursorPostId) {
+            return ResponseEntity.badRequest().body(Map.of("error", "cursorCreatedAt and cursorPostId must be provided together."));
+        }
+
+        try {
+            FeedPostsPageResponse response = postService.getFeedPosts(userId, limit, cursorCreatedAt, cursorPostId);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
+        }
     }
 
     @PutMapping("/{postId}")

@@ -15,6 +15,7 @@ public class PostResponse {
     private LocalDateTime updatedAt;
     private String authorName; // To display author's name directly
     private Long authorId;     // Add authorId field
+    private String authorProfilePictureUrl;
     private Long communityId;
     private Set<String> hashtags;
     private long likesCount;
@@ -22,7 +23,19 @@ public class PostResponse {
     private List<CommentResponse> comments; // Assuming a CommentResponse DTO will be created later
 
     // Constructor for creating from Post entity and additional data
-    public PostResponse(Long id, String content, String imageUrl, LocalDateTime createdAt, LocalDateTime updatedAt, String authorName, Long communityId, Set<String> hashtags, long likesCount, boolean isLiked, List<CommentResponse> comments) {
+    public PostResponse(
+            Long id,
+            String content,
+            String imageUrl,
+            LocalDateTime createdAt,
+            LocalDateTime updatedAt,
+            String authorName,
+            Long communityId,
+            Set<String> hashtags,
+            long likesCount,
+            boolean isLiked,
+            List<CommentResponse> comments
+    ) {
         this.id = id;
         this.content = content;
         this.imageUrl = imageUrl;
@@ -37,7 +50,21 @@ public class PostResponse {
     }
 
     // Constructor including authorId
-    public PostResponse(Long id, String content, String imageUrl, LocalDateTime createdAt, LocalDateTime updatedAt, String authorName, Long authorId, Long communityId, Set<String> hashtags, long likesCount, boolean isLiked, List<CommentResponse> comments) {
+    public PostResponse(
+            Long id,
+            String content,
+            String imageUrl,
+            LocalDateTime createdAt,
+            LocalDateTime updatedAt,
+            String authorName,
+            Long authorId,
+            String authorProfilePictureUrl,
+            Long communityId,
+            Set<String> hashtags,
+            long likesCount,
+            boolean isLiked,
+            List<CommentResponse> comments
+    ) {
         this.id = id;
         this.content = content;
         this.imageUrl = imageUrl;
@@ -45,6 +72,7 @@ public class PostResponse {
         this.updatedAt = updatedAt;
         this.authorName = authorName;
         this.authorId = authorId; // Initialize authorId
+        this.authorProfilePictureUrl = authorProfilePictureUrl;
         this.communityId = communityId;
         this.hashtags = hashtags;
         this.likesCount = likesCount;
