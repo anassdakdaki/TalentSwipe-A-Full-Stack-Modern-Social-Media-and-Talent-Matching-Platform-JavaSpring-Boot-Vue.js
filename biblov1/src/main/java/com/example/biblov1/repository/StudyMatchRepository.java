@@ -15,4 +15,6 @@ public interface StudyMatchRepository extends JpaRepository<StudyMatch, Long> {
     Optional<StudyMatch> findByUser1AndUser2(User user1, User user2);
     List<StudyMatch> findByUser1AndStatus(User user1, MatchStatus status);
     List<StudyMatch> findByUser2AndStatus(User user2, MatchStatus status);
+    long countByUser1AndStatus(User user, MatchStatus status);
+    long countByUser2AndStatus(User user, MatchStatus status);
 } 

@@ -14,6 +14,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -56,6 +57,23 @@ public class MatchController {
             logger.error("Error processing swipe: {}", e.getMessage(), e);
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
+    }
+
+    @GetMapping("/with/{otherUserId}")
+    public ResponseEntity<Map<String, Object>> getMatchWithUser(
+            @RequestAttribute("userId") Long currentUserId,
+            @PathVariable Long otherUserId
+    ) {
+        Map<String, Object> payload = new HashMap<>();
+        var matched = matchService.findMatchedPair(currentUserId, otherUserId);
+        if (matched.isPresent()) {
+            payload.put("matched", true);
+            payload.put("matchId", matched.get().getId());
+        } else {
+            payload.put("matched", false);
+            payload.put("matchId", null);
+        }
+        return ResponseEntity.ok(payload);
     }
 
     // The acceptMatch method seems specific to study groups, might not be needed for direct user matches

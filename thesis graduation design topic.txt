@@ -1,0 +1,421 @@
+Chengdu Neusoft University
+Graduation Design Report
+
+
+
+Abstract  
+
+  In today�s fast-paced digital landscape, individuals and professionals rely on various fragmented platforms to network, collaborate, and communicate. While platforms like LinkedIn, Facebook, and Slack serve specialized purposes, they fail to provide a unified space for managing both professional and personal connections. Biblo addresses this challenge by offering an integrated platform that combines professional networking, peer discovery, community interaction, and real-time communication. Built with a Spring Boot backend, Vue.js frontend, and MySQL for data storage, Biblo leverages JWT for secure authentication and WebSocket for real-time messaging. A unique feature of Biblo is its mutual matching system, which allows users to connect based on shared skills, interests, and goals, facilitating meaningful, one-on-one interactions. The platform enables users to create skill-based profiles, engage in relevant communities, and communicate instantly, all within one cohesive system.
+  This thesis explores the design, development, and evaluation of Biblo as a comprehensive solution to the fragmentation of existing digital platforms. The platform combines state-of-the-art technologies to ensure scalability, security, and a user-friendly experience. The implementation of the mutual matching system empowers users to discover compatible peers through a swipe-based protocol, ensuring that connections are based on mutual interest. By utilizing JWT for stateless authentication and WebSocket for real-time communication, Biblo ensures privacy, security, and seamless user interactions. The goal of this project is to demonstrate how an integrated platform, enhanced by a peer-matching system, can foster professional connections, facilitate collaboration, and support community-driven engagement, ultimately creating a more efficient and connected online ecosystem.
+
+    
+    Key words?Spring Boot, Vue.js, MySQL, JWT, WebSocket, Peer Matching, Community Interaction, Real-Time Communication, Full-Stack Development, Scalable System
+    
+    
+Table of Contents
+CHAPTER 1?INTRODUCTION	1
+1.1	OVERVIEW OF BIBLO	1
+1.2	MAIN RESEARCH CONTENT	2
+1.3	CURRENT SITUATION AT HOME AND ABROAD	2
+CHAPTER 2?KEY TECHNOLOGY INTRODUCTION	4
+2.1 KEY DEVELOPMENT TECHNOLOGY INTRODUCTION	4
+2.2 OTHER RELATED TECHNOLOGIES	5
+CHAPTER 3?SYSTEM ANALYSIS	6
+3.1 SYSTEM REQUIREMENTS	6
+3.2 USE CASE SPECIFICATION AND ANALYSIS	6
+    3.2.1 use case1	6
+    3.2.2 use case2	7
+3.3 FEASIBILITY ANALYSIS OF SYSTEM TASKS	7
+    3.3.1 Technology Feasibility	7
+    3.3.2 System Security Analysis	8
+    3.3.3 System Development environment	8
+CHAPTER 4?SYSTEM DESIGN	9
+4.1 SYSTEM FRAMEWORK	9
+    4.1.1 MVVM package	9
+    4.1.2 Platform package	10
+4.2 SYSTEM FUNCTION STRUCTURE DESIGN	11
+    4.2.1 module1 design	11
+    4.2.2 module2 design	11
+4.3 DATABASE DESIGN	12
+    4.3.1 CDM	12
+    4.3.2 PDM	12
+    4.3.3 Main tables	12
+CHAPTER 5?SYSTEM IMPLEMENTATION	13
+5.1	USE CASE1	13
+5.2	CATEGORY IMPLEMENTATION	13
+CHAPTER 6?SYSTEM TESTING	14
+6.1 TESTING ENVIRONMENT AND TESTING SOLUTION	14
+    6.1.1 Testing Environment	14
+    6.1.2 Testing plan	14
+6.2 TESTING USE CASES	14
+CHAPTER 7?CONCLUSION	16
+REFERENCES	17
+ACKNOWLEDGEMENTS	19
+
+
+
+Chapter 1?Introduction
+    In today�s fast-paced digital world, where online communication and professional networking are at the forefront of modern interaction, individuals and professionals are increasingly dependent on various platforms to manage their relationships and communications. However, this reliance on multiple platforms often leads to fragmented user experiences. With the rapid advancement of technology and the widespread adoption of digital devices like smartphones and computers, the need for a more integrated approach to social networking, community building, and real-time communication has become essential. In this digital era, numerous platforms and applications have emerged, but they often fail to address the need for a unified space that combines professional networking, peer discovery, and community interaction.
+Biblo is a comprehensive online platform designed to bridge these gaps by providing a secure, scalable, and user-friendly solution. It integrates professional networking, peer study discovery, community interaction, and real-time communication into one cohesive platform. Biblo aims to streamline the process of connecting individuals based on shared skills and interests, offering a dynamic user experience. Through Biblo, users can create skill-based profiles, engage in topic-focused communities, and communicate instantly with one another through real-time messaging. By leveraging modern technologies such as Spring Boot, Vue.js, MySQL, JWT, and WebSocket, Biblo delivers a seamless, intuitive experience that enhances both professional networking and community engagement.
+This project focuses on the development of Biblo as a response to the fragmentation in current digital platforms. It leverages state-of-the-art web technologies to ensure that users have access to secure authentication, real-time communication, and scalable solutions. Biblo enables users to connect, collaborate, and engage in meaningful interactions while providing a foundation for growth and sustainability in the digital space. 
+1.1 Overview of Agriculture Product Shopping system
+    In today�s interconnected world, individuals often rely on multiple fragmented platforms for various online interactions such as professional networking, communication, and community engagement. These platforms, such as LinkedIn for professional networking, Reddit for community-based discussions, and Facebook for personal social interaction, create inefficiencies as users must juggle between different services to meet their needs. Biblo seeks to address this fragmentation by providing a unified platform where users can engage professionally and socially, as well as communicate in real-time, all in one place. The Biblo App enables users to create skill-based profiles, join or create communities, and interact with others through real-time messaging. It is built using modern technologies such as Spring Boot for the backend, Vue.js for the frontend, and MySQL for data storage, with JWT for secure authentication and WebSocket for real-time communication.
+1.2 Main research content
+    This report presents the design, development, and evaluation of the Biblo platform. The research focuses on addressing the challenge of platform fragmentation by creating an integrated system where users can network, collaborate, and communicate within a single environment. The report covers the following aspects:
+    * Design and Development of a full-stack platform that integrates social networking, peer study discovery, community interaction, and real-time messaging.
+    * JWT Authentication to manage secure and stateless user sessions.
+    * WebSocket Integration to provide real-time communication.
+    * The Scalable Architecture of the system built using Spring Boot, Vue.js, and MySQL.
+    The report also highlights the unique mutual matching system of Biblo, which allows users to connect based on shared interests and goals through a swipe-based interface. This system enables meaningful, one-on-one interactions, promoting efficient collaboration and networking.
+1.3 Current Situation at Home and Abroad
+    Globally, digital platforms for professional networking, community engagement, and communication are increasingly fragmented. While platforms like LinkedIn serve professional networking, Reddit provides community discussions, and various messaging apps facilitate communication, they do not offer a unified solution. This fragmentation poses challenges for users, as they are required to manage multiple accounts across different services, resulting in inefficiencies.
+    In Morocco, while platforms like LinkedIn and Facebook are widely used for professional and social networking, there is a lack of comprehensive platforms that integrate both professional networking and real-time communication in a unified space. Many professionals and students in Morocco rely on these platforms for career-related connections and educational collaboration, but the absence of a one-stop platform for networking, community-building, and instant communication hampers efficient engagement.
+    Moreover, the rise of WeChat in China has showcased the potential of integrated platforms, where users can seamlessly engage in professional networking, community discussions, and real-time messaging. However, similar solutions in Morocco and across the MENA region are limited, with many users still dependent on multiple, isolated services. Biblo seeks to bridge this gap in Morocco and beyond, offering an integrated solution that enhances professional and personal connections, fosters collaboration, and facilitates real-time communication in a secure and scalable environment.
+Chapter 2?Key Technology Introduction
+2.1 Key Development Technology Introduction
+
+Spring Boot:
+	The backend of Biblo is developed using Spring Boot, a robust framework for building Java-based applications. Spring Boot simplifies the creation of production-ready applications, offering automatic configuration for key functionalities like security, database access, and API management.
+
+Vue.js:
+	Vue.js is used for the frontend, enabling the creation of a dynamic and reactive user interface. It allows for smooth user interactions through its component-based architecture and data binding features, ensuring real-time updates across the platform.
+
+MySQL:
+	MySQL is the relational database management system used to store user data, posts, messages, and community interactions. It is designed to handle large datasets efficiently while maintaining data integrity and consistency.
+
+JWT: 
+   JSON Web Tokens is employed for secure authentication, allowing users to log in without the need for server-side sessions. This stateless approach improves scalability and enhances security.
+
+
+WebSocket:
+    WebSocket is utilized to implement real-time communication, enabling users to send and receive messages instantly. This ensures seamless interaction between users without requiring page reloads.
+2.2 Other related technologies
+Spring Security: 
+    Spring Security provides robust mechanisms for handling authentication and authorization, making it easier to secure endpoints and manage user access.
+    
+Hibernate: 
+    Hibernate is used for Object-Relational Mapping (ORM) to simplify interactions between Java objects and the database, reducing the complexity of database queries.
+    
+Maven: 
+    Maven is used for project management, ensuring that all dependencies are handled efficiently and that the build process remains consistent across different environments.
+    
+Postman:
+    Postman is an interface testing software that can be used for interface request testing.
+
+
+Chapter 3?System Analysis
+3.1 System requirements 
+    The frontend system use case diagram of the Agriculture Product Shopping System is shown in Fig 3.1.
+
+    Fig 3.1 APSS front-end use cases diagram
+    The backend system use case diagram of the Agriculture Product Shopping System is shown in Fig 3.2.
+
+    Fig 3.2 APSS back-end use cases diagram
+3.2 Use case specification and analysis
+3.2.1 use case1
+    1.Use case diagram
+
+    					Fig 3.3 use case1 diagram
+    Use case id:
+    2.Pre-condition
+    
+    3.Post-condition
+    
+    4.Basic path
+    
+    5.Extended path
+    
+    6. Field list
+    
+    7. Class diagram
+    
+    Fig 3.4 class diagram of use case1
+    8.Sequence Diagram
+    
+    Fig 3.5 sequence diagram of use case1
+3.2.2 use case2
+    1.Use case diagram
+
+    					Fig 3.6 use case2 diagram
+    2.Pre-condition
+    
+    3.Post-condition
+    
+    4.Basic path
+    
+    5.Extended path
+    
+    6. Field list
+    
+    7. Class diagram
+    
+    Fig 3.7 class diagram of use case2
+    8.Sequence Diagram
+    
+Fig 3.8 sequence diagram of use case2
+3.3 Feasibility Analysis of System Tasks
+3.3.1 Technology Feasibility 
+    The Biblo platform utilizes Vue.js for frontend development, benefiting from its reactive data binding and component-based structure. Vue.js allows for the creation of dynamic and highly interactive user interfaces while simplifying the overall development process. Its seamless integration with Vue Router and Vuex ensures smooth navigation and state management across different sections of the application. The backend is developed using Spring Boot, a framework that streamlines Java application development by minimizing configuration and offering built-in support for essential features like security and database interaction. Spring Boot provides a robust, scalable, and maintainable backend architecture.
+    For data persistence, MySQL serves as the relational database management system, ensuring reliable storage of user profiles, messages, posts, and community data. The system uses JPA (Java Persistence API) for object-relational mapping (ORM), and Hibernate is employed as the ORM provider. This enables seamless interaction between Java objects and database tables, simplifying complex database operations and ensuring data integrity. WebSocket technology is used for real-time messaging, allowing users to engage in live communication with minimal latency.
+    
+3.3.2 System Security Analysis
+    In Biblo, user authentication is a critical component, ensuring that only authorized users can access and modify their data. The system employs JWT (JSON Web Tokens) for secure, stateless authentication. When a user logs in, a JWT token is generated and used to authenticate subsequent API requests. This eliminates the need for server-side sessions, enhancing scalability and performance. During the login process, Spring Security is used to protect the application from unauthorized access, ensuring that only valid users can perform actions within the platform.
+    User passwords are securely encrypted using BCryptPasswordEncoder from Spring Security, preventing sensitive information from being exposed. When users interact with the backend, the JWT token is included in the HTTP header of the requests, ensuring that each action is authorized and the user's identity is validated. The system checks the validity of the token on the server side to prevent unauthorized access to protected resources. If the token is valid and hasn�t expired, the user is granted access to their designated roles and can perform actions within the system. This method strengthens the overall security of the platform by safeguarding user credentials and providing fine-grained access control.
+3.3.3 System Development environment
+* Development Platform: JDK 1.8, Windows 10, Maven 2.7.1
+* Development Tools: IntelliJ IDEA, Visual Studio
+* Programming Languages: Java (Spring Boot), JavaScript (Vue.js)
+* Backend Framework: Spring Boot 2.X
+* Frontend Framework: Vue.js, Bootstrap, HTML, SCSS
+* Database Management: MySQL 8.0, MySQL Workbench
+* Design Tools: PowerDesigner
+* API Testing Tools: Postman
+    
+Chapter 4?System Design
+    In this system, we employ Angular for the front-end, leveraging its capabilities within the MVVM (Model-View-ViewModel) framework. For the back-end, we utilize Spring Boot, which operates within the MVC (Model-View-Controller) framework. The architecture is designed to facilitate a clear separation between the front-end and back-end components, ensuring modularity and scalability. Below are the technical architecture overview and the diagram illustrating the front-end and back-end technology architecture.4.1 Design guiding Theory and Principle.
+4.1 System Framework
+4.1.1 MVVM package
+	MVVM
+
+    Fig:4.1 MVVM diagram
+    MVVM is short for Model?View, ViewModel. It is essentially an improved version of MVC (Model?View?Controller). Model refers to the data transferred from the back end. View refers to the page you see. ViewModel is the core of the MVVM, which is the bridge between the view and the model. It has two directions: one is to convert Model into View, that is, to convert the data transferred from the back end into the page you see. The implementation method is: data binding. The second is to convert View to Model, that is, to convert the page you see into back-end data. The implementation method is: DOM event listening. These two directions are implemented, and we call them bidirectional data binding.
+4.1.2 Platform package	
+	
+    Fig4.2 package diagram
+    resources: It is equal to View.
+    com.nsu.agri.handler: It is equal to ViewModel.
+    com.nsu.agri.service: It is equal to Model and has interfaces.
+    com.nsu.agri.service.impl: It is classes which implement interfaces in package of com.nsu.agri.service and equal to Model.
+    com.nsu.agri.dao: It is equal to DAO.
+    com.nsu.agri.entity: It is for ORM.  
+4.2 System Function Structure Design
+4.2.1 module1 design
+    
+    Fig4.3 module1 class diagram
+1. Attribute design
+Tab4.1 Attributes design of module1 classes
+Class
+Attribute
+type
+description
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+2. Method design
+1) use case1
+
+Fig4.4 sequence diagram of use case1
+2) use case2
+
+Fig4.5 sequence diagram of use case2
+4.2.2 module2 design
+    
+    Fig4.6 module2 class diagram
+1. Attribute design
+Tab4.2 Attributes design of module2 classes
+Class
+Attribute
+type
+description
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+2. Method design
+1) use case1
+
+Fig4.7 sequence diagram of use case1
+2) use case2
+
+Fig4.8 sequence diagram of use case2
+
+4.3 Database design
+4.3.1 CDM
+
+Fig4.9 CDM
+
+4.3.2 PDM
+
+     Fig4.10 PDM
+
+4.3.3 Main tables
+Tab4.3 table1
+column
+type
+constraints
+
+
+
+
+
+
+
+
+     
+Chapter 5?System Implementation
+5.1 use case1  
+    1.Page description
+    On this interface, user can add a new product and select the category for that product in this system also the user can update that product later. Here first we add a product and later update that product. The page implementation is shown in Figure 5.1 and Figure 5.2.
+
+    Fig 5.1
+    
+
+    Fig 5.2
+    
+
+    2.Core code display
+    
+5.2 Category Implementation  
+    1.Page description
+    On this interface, user can add a new product and select the category for that product in this system also the user can update that product later. Here first we add a product and later update that product. The page implementation is shown in Figure 5.1 and Figure 5.2.
+
+    Fig 5.3
+    
+
+    Fig 5.4
+
+
+    2.Core code display
+
+
+
+
+Chapter 6?System Testing
+6.1 Testing Environment and Testing Solution
+ 6.1.1 Testing Environment
+The testing environment constructed for this system is as follows:
+> Operating System: Windows 12 Professional Edition 64-bit.
+> Browser: Chrome, Microsoft edge.
+> Web Server: Tomcat 9.29.
+> JDK version: 1.8.
+> Database: MySQL 8.0.23.
+> Testing Tools: Postman, Chrome developer mode.
+6.1.2 Testing plan
+    In crafting the testing plan for black-box testing, our primary objective is to comprehensively assess the functionality of the software system without delving into its internal mechanisms. This methodology treats the software as a closed black box, emphasizing the inputs, outputs, and overall system behavior rather than its internal structure or workings. The testing process is centered around the program's interfaces, with a keen focus on verifying if the program operates in accordance with the requirements outlined in the specification document. Our testing will meticulously examine the program's ability to receive input data correctly and generate accurate output information. By concentrating on the external structure of the program and disregarding internal logic, black-box testing is geared towards evaluating software interfaces and ensuring that all functionality operates as intended from an end-user perspective. This approach is crucial for identifying potential discrepancies between expected and actual system behavior, ultimately ensuring the software's reliability, functionality, and user satisfaction.
+6.2 testing use cases
+   Testing use cases are shown in Tab6.1.
+			
+
+
+
+
+Tab 6.1 Testing use cases
+Test Case id
+Test Case
+Description
+Expected Result
+Actual Result
+Pass/Fail
+TC001
+
+
+
+
+
+
+Chapter 7?Conclusion
+    The graduation project is a chance to put into practice the professional knowledge gained during university studies. It covers a range of computer-related subjects like Java programming, computer networking, database management, software testing, Web development, Object-oriented analysis and design, and software engineering. The project involves everything from analyzing requirements, conceptual designing, detailed design, coding implementation part, and testing, to deploying and completing a full software development cycle. One of the key aspects of the project is its integration of current and popular technologies and frameworks. This not only enhances the functionality and performance of the software but also prepares the project for seamless integration into practical development environments in the future. By incorporating these technologies, such as advanced Java libraries, modern database management systems, efficient testing tools, and project management platforms, the project becomes a showcase of contemporary industry practices and standards.
+    This project marks a significant starting point, refining logical thinking and error analysis skills. It encourages continuous self-learning to improve skills and knowledge, enhancing competitiveness and potential for growth. This approach helps solve project development challenges, leading to better project quality overall.
+    In conclusion, the graduation project is not just a culmination of academic learning but a stepping stone toward professional growth and success. It encapsulates the culmination of years of theoretical knowledge and practical skills, providing a platform for individuals to showcase their abilities, explore innovative solutions, and contribute meaningfully to the field of software development.
+References
+[1] Gusarovs K .An Analysis on Java Programming Language Decompiler Capabilities[J]. Applied Computer Systems,2018,23(2):109-117.
+[2] Bucea-Manea-Tonis R .Open source MySQL Browser for Open Innovation[J].Journal of Economic Development, Environment and People,2014,3(2):32-37.
+[3] Xu S ,Mitchell L D ,McFadden P J , et al.Field?Aligned Potentials at Mars From MAVEN Observations[J].Geophysical Research Letters,2018,45(19):10,119-10,127.
+[4] Karim B,Houcine M,Ghalem B. Comparative Study Between the MySQL Relational Database and the MongoDB NoSQL Database[J]. International Journal of Software Science and Computational Intelligence (IJSSCI),2021,13(3).
+[5]Al-Debagy, Omar. "A Comparative Review of MicroServices and Monolithic Architectures" [J]. 09 December 2019, 455:450.
+[6]Parsons, David, and David Parsons. "Unit Testing with Junit [M]". Foundational Java: Key Elements and Practical Programming (2020): 251-278.
+[7]G. Geetha, Monisha Mittal, K. Mohana Prasad, J. Godwin Ponsam. "Interpretation and Analysis of Angular Framework. [C]" IEEE Xplore, 2022 ICPECTS, Chennai, 08-09 December 2022.
+[8] Letkowski, J. "Complementing Database Design for Microsoft Access with MySQL Workbench" [R]. Available online: https://www.biiat.com (accessed on 23 May 2024).
+[9] Du Pengxuan, Chen Fang, Cao Mengchuan. Design and implementation of smart agriculture information collection system based on Java Web[J].Science & Technology Information,2023,21(23):162-165.
+[10] Sun Quanling, Hong Cifu, Yan Hui. �Information system security function implementation based on Java security library Spring Security�[J].Industrial Control Computer,2024,37(05):104-105+108.)
+[11]Duldulao DB, Villafranca SR. �Spring Boot and Angular: Hands-on full stack web development with Java, Spring, and Angular��[M].2022 Dec 16.
+[12] Martin-Lopez A, Segura S, Ruiz-Cort�s A. �RESTest: automated black-box testing of RESTful web APIs�[C]. InProceedings of the 30th ACM SIGSOFT International Symposium on Software Testing and Analysis 2021 Jul 11 (pp. 682-685).
+[13] De Lauretis, L. "From Monolithic Architecture to Microservices Architecture" [C]. In: 2019 IEEE International Symposium on Software Reliability Engineering Workshops (ISSREW), October 2019, pp. 93-96. IEEE.
+[14] BENAMI D . THE NATURE, THE BEAUTY AND THE DIFFICULTY IN JAVA PROGRAMMING[J]. Studia Universitatis Moldaviae: Stiinte Exacte si Economice,2016(7 (97)).
+[15] Crawford, W., Kaplan, J. "J2EE Design Patterns: Patterns in the Real World" [M]. O'Reilly Media; 1st edition, October 28, 2003.
+
+Acknowledgements
+    I would like to express my heartfelt gratitude to Mr. Duanenze, my teacher and supervisor, for his unwavering care, guidance, and exceptional support throughout my academic journey. Despite the challenges posed by the pandemic and the shift to online learning, Mr. Duanenze remained steadfast in his commitment to our education. His dedication and efforts have been instrumental in helping me navigate through the project development and the entirety of my studies. I would like to thank Mr. Chen Keqin for his kindness and guidance in responding to our issues at any given time ensuring our better stay and life in and out of campus.
+    I also wish to thank all teachers who taught me in the past four years; special thanks to Miss Wang Chunxiu, Miss Wang Lu, Mr. Cheng Peng, Mr. Xia Lei, and others. Chinese language teachers (Miss Melissa, Miss Caro)and others.And a special thanks to our Tutor Miss Guolin who ensured our well-being in our school. 
+    Lots of appreciation goes to my classmates, who we have been together for that journey, providing help and support to each other and enjoying life together for the past 4 years. Long live Neusoft. Long live China. Thank you.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Chengdu Neusoft University
+Graduation Design (Thesis) Original Commitment
+    1. I promise: The submission of the Graduation Design (Thesis) is a serious study work after reading the school's "Graduation Design (thesis) Work Specification". I completed all the tasks listed in the planed task book independently under the guidance of teacher with no cheating, no copying of other�s work.
+    2. All the references in the Graduation Design (Thesis) citing other people's views and research results, are annotated in the paper or listed in the form of reference. All the individuals and groups who make important contributions to this work have been noted in this paper.
+    3., I�ll undertake the corresponding legal responsibility if there�s any infringement of intellectual property rights in the Graduation Design (Thesis).
+    4. I fully understand the school provisions on the preservation, use of Graduation Design (Thesis), namely: Submit both the printed and electronic version of the Graduation Design (Thesis) and related materials as the school requested; agree that the school can retain both the printed and electronic version of the Graduation Design (Thesis), which are allowed to access and borrow; the school can use photocopies, reduction printing or other means of reproduction to save the Graduation Design (Thesis), and can publish the complete or part of the paper content.
+    5. I fully understand the related items in the "Graduation Design (Thesis) work specification", namely: The bachelor's degree application qualification will be cancelled if the Graduation Design (Thesis) is found purchasing, ghostwritten or plagiarism; the diploma will be revoked by law even though it has been granted. The school will no longer accept the requirement of a student's degree application in three years who has received a punishment of diploma canceling.
+    6. I fully understand the related items in the "Student handbook", namely:" "The student who is regarded as a plagiarism person will not grant the bachelor's degree, and "Students will not grant a bachelor's degree due to disciplinary punishment in the final year, nor the bachelor's degree application qualification".
+    All the risks including the legal results, abnormal graduation and other unforeseen consequences will be taken by the student myself.
+    Student Signature:             
+
+
+Chengdu Neusoft University Graduation Design Report
+
+III
+
+
+Chengdu Neusoft University Graduation Design Report
+
+Chengdu Neusoft University Graduation Design Report
+
+Chengdu Neusoft University Graduation Design Report
+
+Chengdu Neusoft University Graduation Design Report
+
+2
+
+
+
+
+

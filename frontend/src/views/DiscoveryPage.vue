@@ -1,583 +1,559 @@
 <template>
-  <div class="discovery-page futuristic-theme">
-    <div v-if="loading" class="loading-message">Loading users...</div>
-    <div v-if="error" class="error-message">{{ error }}</div>
+  <div class="discovery-page">
+    <div class="page-shell">
+      <div v-if="loading" class="state-message">Loading users...</div>
+      <div v-else-if="error" class="state-message error-message">{{ error }}</div>
 
-    <div v-if="profiles && profiles.length" class="centered-card-container">
-      <div class="glass-card">
-        <div class="profile-header">
-          <img 
-            v-if="profiles[0].profilePictureUrl"
-            :src="profiles[0].profilePictureUrl"
-            alt="Profile Picture"
-            class="profile-picture-small"
-          />
-           <div v-else class="placeholder-picture-small">
-              <i class="fas fa-user"></i>
+      <template v-else-if="currentProfile">
+        <article class="match-card">
+          <header class="match-header">
+            <div class="identity-row">
+              <img
+                v-if="currentProfile.profilePictureUrl"
+                :src="currentProfile.profilePictureUrl"
+                alt="Profile picture"
+                class="profile-picture"
+              />
+              <div v-else class="profile-placeholder">
+                <i class="fas fa-user"></i>
+              </div>
+
+              <div>
+                <h1 class="user-name">{{ currentProfile.name || 'Community Member' }}</h1>
+                <p class="identity-meta" v-if="currentProfile.location">
+                  <i class="fas fa-map-marker-alt"></i>
+                  {{ currentProfile.location }}
+                </p>
+              </div>
             </div>
-          <h1 class="user-name">{{ profiles[0].name }}</h1>
-        </div>
 
-        <div class="profile-details">
-           <div class="detail-item" v-if="profiles[0].age">
-              <i class="fas fa-birthday-cake icon"></i>
-              <span>{{ profiles[0].age }} years old</span>
-           </div>
-           <div class="detail-item" v-if="profiles[0].gender">
-               <i class="fas fa-venus-mars icon"></i>
-               <span>{{ profiles[0].gender }}</span>
-           </div>
-           <div class="detail-item" v-if="profiles[0].location">
-             <i class="fas fa-map-marker-alt icon"></i>
-             <span>{{ profiles[0].location }}</span>
-           </div>
-           <div class="detail-item" v-if="profiles[0].major">
-              <i class="fas fa-book icon"></i>
-              <span>{{ profiles[0].major }}</span>
-           </div>
-           <div class="detail-item" v-if="profiles[0].university">
-             <i class="fas fa-graduation-cap icon"></i>
-             <span>{{ profiles[0].university }}</span>
-           </div>
+            <button class="view-profile-btn" @click="openPublicProfile">
+              <i class="fas fa-id-card"></i>
+              View Full Profile
+            </button>
+          </header>
 
-           <div v-if="profiles[0].bio" class="info-section bio-section">
-             <h4>About Me</h4>
-             <p>{{ profiles[0].bio }}</p>
+          <div class="details-list">
+            <div class="detail-item" v-if="currentProfile.age">
+              <i class="fas fa-birthday-cake"></i>
+              <span>{{ currentProfile.age }} years old</span>
+            </div>
+            <div class="detail-item" v-if="currentProfile.gender">
+              <i class="fas fa-venus-mars"></i>
+              <span>{{ currentProfile.gender }}</span>
+            </div>
+            <div class="detail-item" v-if="currentProfile.major">
+              <i class="fas fa-briefcase"></i>
+              <span>{{ currentProfile.major }}</span>
+            </div>
+            <div class="detail-item" v-if="currentProfile.university">
+              <i class="fas fa-graduation-cap"></i>
+              <span>{{ currentProfile.university }}</span>
+            </div>
           </div>
 
-          <div v-if="profiles[0].lookingFor && Object.values(profiles[0].lookingFor).some(val => val)" class="info-section goals-section">
-             <h4>Looking For</h4>
-             <div class="goals-badges">
-                <span v-if="profiles[0].lookingFor.studyPartner" class="goal-badge">🧠 Study Partner</span>
-                <span v-if="profiles[0].lookingFor.languageExchange" class="goal-badge">🗣️ Language Exchange</span>
-                <span v-if="profiles[0].lookingFor.friendship" class="goal-badge">💬 Friendship</span>
-                <span v-if="profiles[0].lookingFor.networking" class="goal-badge">🤝 Networking</span>
-                <span v-if="profiles[0].lookingFor.community" class="goal-badge">🌍 Community</span>
-             </div>
-          </div>
+          <section v-if="currentProfile.bio" class="info-section">
+            <h3>About</h3>
+            <p>{{ currentProfile.bio }}</p>
+          </section>
 
-          <div v-if="profiles[0].interests && profiles[0].interests.length" class="info-section interests-section">
-             <h4>Interests</h4>
-             <div class="tags">
-               <span v-for="interest in profiles[0].interests" :key="interest" class="tag">#{{ interest }}</span>
-             </div>
-          </div>
+          <section v-if="hasLookingFor" class="info-section">
+            <h3>Looking For</h3>
+            <div class="chip-list">
+              <span v-if="currentProfile.lookingFor.studyPartner" class="chip">Study Partner</span>
+              <span v-if="currentProfile.lookingFor.languageExchange" class="chip">Language Exchange</span>
+              <span v-if="currentProfile.lookingFor.friendship" class="chip">Friendship</span>
+              <span v-if="currentProfile.lookingFor.networking" class="chip">Networking</span>
+              <span v-if="currentProfile.lookingFor.community" class="chip">Community</span>
+            </div>
+          </section>
 
-          <div v-if="profiles[0].languages && profiles[0].languages.length" class="info-section languages-section">
-              <h4>Languages</h4>
-              <ul>
-                <li v-for="lang in profiles[0].languages" :key="lang.name">
-                  <i class="fas fa-language icon"></i> {{ lang.name }} ({{ lang.level }})
+          <div class="compact-info-grid">
+            <section v-if="currentProfile.interests && currentProfile.interests.length" class="info-section">
+              <h3>Interests</h3>
+              <div class="chip-list">
+                <span v-for="interest in currentProfile.interests" :key="interest" class="chip">#{{ interest }}</span>
+              </div>
+            </section>
+
+            <section v-if="currentProfile.languages && currentProfile.languages.length" class="info-section">
+              <h3>Languages</h3>
+              <ul class="clean-list">
+                <li v-for="lang in currentProfile.languages" :key="`${lang.name}-${lang.level}`">
+                  {{ lang.name }} ({{ lang.level }})
                 </li>
               </ul>
-           </div>
+            </section>
 
-          <div v-if="profiles[0].socialLinks && (profiles[0].socialLinks.github || profiles[0].socialLinks.linkedin || profiles[0].socialLinks.instagram)" class="info-section social-links-section">
-             <h4>Social Links</h4>
-             <p v-if="profiles[0].socialLinks.github"><a :href="profiles[0].socialLinks.github" target="_blank"><i class="fab fa-github icon"></i> GitHub</a></p>
-             <p v-if="profiles[0].socialLinks.linkedin"><a :href="profiles[0].socialLinks.linkedin" target="_blank"><i class="fab fa-linkedin icon"></i> LinkedIn</a></p>
-             <p v-if="profiles[0].socialLinks.instagram"><a :href="profiles[0].socialLinks.instagram" target="_blank"><i class="fab fa-instagram icon"></i> Instagram</a></p>
+            <section v-if="hasSocialLinks" class="info-section info-section-wide">
+              <h3>Social Links</h3>
+              <div class="social-links">
+                <a v-if="currentProfile.socialLinks.github" :href="currentProfile.socialLinks.github" target="_blank" rel="noopener noreferrer">GitHub</a>
+                <a v-if="currentProfile.socialLinks.linkedin" :href="currentProfile.socialLinks.linkedin" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+                <a v-if="currentProfile.socialLinks.instagram" :href="currentProfile.socialLinks.instagram" target="_blank" rel="noopener noreferrer">Instagram</a>
+              </div>
+            </section>
           </div>
+        </article>
 
+        <p class="swipe-tip">
+          Tip: use <kbd>&larr;</kbd> to Skip and <kbd>&rarr;</kbd> to Connect
+        </p>
+
+        <p v-if="feedbackMessage" class="feedback-message">{{ feedbackMessage }}</p>
+
+        <div class="floating-match-actions">
+          <button @click="triggerLeftSwipe" class="match-action skip-button">
+            <i class="fas fa-ban"></i>
+            <span>Skip</span>
+          </button>
+          <button @click="triggerRightSwipe" class="match-action connect-button">
+            <i class="fas fa-user-plus"></i>
+            <span>Connect</span>
+          </button>
         </div>
+      </template>
 
-         <!-- Swipe Action Buttons - Positioned within the card for better responsiveness on smaller screens -->
-        <div v-if="profiles && profiles.length" class="card-actions-buttons">
-           <button @click="triggerLeftSwipe" class="action-button skip-button">❌ Skip</button>
-           <button @click="triggerRightSwipe" class="action-button connect-button">✅ Connect</button>
-         </div>
-
+      <div v-else class="empty-state">
+        <i class="fas fa-search"></i>
+        <p>Nothing to discover right now. Come back later.</p>
       </div>
     </div>
-
-    <div v-else-if="!loading && !error" class="no-users-message empty-state">
-      <i class="fas fa-search"></i>
-      <p>Nothing to discover right now. Come back later!</p>
-    </div>
-
-     <!-- Swipe Instruction - Outside the card -->
-     <div v-if="profiles && profiles.length" class="swipe-instruction">
-         Swipe or use &larr; / &rarr; keys
-     </div>
-
   </div>
 </template>
 
 <script>
 import axios from 'axios';
-// Removed Swipeable import as we might not use it for full-screen
+
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(/\/+$/, '');
 
 export default {
   name: 'DiscoveryPage',
-  // Removed Swipeable component
   data() {
     return {
       profiles: [],
       loading: true,
       error: null,
-      // Removed cardContainerRef as it's not needed with this structure
+      feedbackMessage: '',
     };
+  },
+  computed: {
+    currentProfile() {
+      return this.profiles.length ? this.profiles[0] : null;
+    },
+    hasLookingFor() {
+      if (!this.currentProfile?.lookingFor) return false;
+      return Object.values(this.currentProfile.lookingFor).some(Boolean);
+    },
+    hasSocialLinks() {
+      const links = this.currentProfile?.socialLinks || {};
+      return Boolean(links.github || links.linkedin || links.instagram);
+    },
   },
   created() {
     this.fetchProfiles();
   },
   mounted() {
-      // Add keyboard listeners
-      window.addEventListener('keydown', this.handleKeyPress);
+    window.addEventListener('keydown', this.handleKeyPress);
   },
-  beforeDestroy() {
-      // Remove keyboard listeners
-      window.removeEventListener('keydown', this.handleKeyPress);
+  beforeUnmount() {
+    window.removeEventListener('keydown', this.handleKeyPress);
   },
   methods: {
+    normalizeMediaUrl(url) {
+      if (!url) return '';
+      if (url.startsWith('http://') || url.startsWith('https://')) return url;
+      return `${API_BASE_URL}${url.startsWith('/') ? url : `/${url}`}`;
+    },
+    getSwipedUserId(profile) {
+      return profile?.user?.id || profile?.userId || profile?.id || null;
+    },
     async fetchProfiles() {
+      this.loading = true;
+      this.error = null;
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.get('http://localhost:8080/api/profiles/discover', {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-        // Assuming the backend returns an array of profiles
-        this.profiles = response.data.map(profile => {
-           if (profile.profilePictureUrl && !profile.profilePictureUrl.startsWith('http')) {
-               profile.profilePictureUrl = `http://localhost:8080${profile.profilePictureUrl}`;
-           }
-            // Ensure nested objects are present for template structure
-            if (!profile.lookingFor) profile.lookingFor = {};
-            if (!profile.socialLinks) profile.socialLinks = {};
-            if (!profile.interests) profile.interests = [];
-            if (!profile.languages) profile.languages = [];
-
-           return profile;
+        const response = await axios.get(`${API_BASE_URL}/api/profiles/discover`, {
+          headers: { Authorization: `Bearer ${token}` },
         });
 
-         // For this design, we only display one profile at a time.
-         // The array will be shifted as users are swiped.
-
-        this.loading = false;
+        this.profiles = (response.data || []).map((profile) => ({
+          ...profile,
+          profilePictureUrl: this.normalizeMediaUrl(profile.profilePictureUrl),
+          lookingFor: profile.lookingFor || {},
+          socialLinks: profile.socialLinks || {},
+          interests: profile.interests || [],
+          languages: profile.languages || [],
+        }));
       } catch (error) {
         this.error = 'Failed to fetch users for discovery.';
         console.error('Error fetching discovery profiles:', error);
+      } finally {
         this.loading = false;
       }
     },
-     handleKeyPress(event) {
-        if (this.profiles.length === 0 || this.loading) return; // Do nothing if no profiles or loading
-
-        if (event.key === 'ArrowLeft') {
-            this.triggerLeftSwipe();
-        } else if (event.key === 'ArrowRight') {
-            this.triggerRightSwipe();
-        }
+    handleKeyPress(event) {
+      if (this.loading || !this.currentProfile) return;
+      if (event.key === 'ArrowLeft') this.triggerLeftSwipe();
+      if (event.key === 'ArrowRight') this.triggerRightSwipe();
     },
-    async handleSwipe(direction) { // Simplified handleSwipe for single card
-      console.log(`Swiped ${direction}`);
+    async handleSwipe(direction) {
+      if (!this.currentProfile) return;
 
-      const swipedUserId = this.profiles[0]?.user.id; // Always get the ID of the first user
+      const swipedUserId = this.getSwipedUserId(this.currentProfile);
       if (!swipedUserId) {
-        console.error('Could not get swiped user ID');
-        // Even if no user ID, remove the card visually
         this.removeTopCard();
-        return; 
+        return;
       }
 
-      const swipeType = direction.toUpperCase(); // Get swipe type (LEFT or RIGHT)
-      if (swipeType !== 'LEFT' && swipeType !== 'RIGHT') {
-         console.error('Invalid swipe direction:', direction);
-         this.removeTopCard();
-         return; 
-      }
-
-      // No manual animation needed for this design, let Vue handle removal
+      const swipeType = direction === 'right' ? 'LIKE' : 'DISLIKE';
 
       try {
-          const token = localStorage.getItem('token');
-          const response = await axios.post('http://localhost:8080/api/matches/swipe', {
-              swipedUserId: swipedUserId,
-              swipeType: swipeType === 'RIGHT' ? 'LIKE' : 'DISLIKE' // Map direction to backend SwipeType enum
-          }, {
-              headers: {
-                  Authorization: `Bearer ${token}`
-              }
-          });
-          console.log(`Sent ${direction} swipe to backend for user ${swipedUserId}`);
+        const token = localStorage.getItem('token');
+        const response = await axios.post(
+          `${API_BASE_URL}/api/matches/swipe`,
+          { swipedUserId, swipeType },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
 
-          if (response.data.match) {
-              console.log('It\'s a match!');
-              // Optionally, show a match notification or animation here
-          }
+        if (response.data?.match) {
+          this.feedbackMessage = 'Mutual match! You can message each other now.';
+        } else if (swipeType === 'LIKE') {
+          this.feedbackMessage = 'Connection request sent.';
+        } else {
+          this.feedbackMessage = '';
+        }
 
-           // Remove the profile from the array AFTER the backend call is successful
-           // This will trigger Vue to remove the element from the DOM, which is enough for this design
-           this.removeTopCard();
-           console.log(`Removed top profile after backend call`);
-
+        this.removeTopCard();
       } catch (error) {
-          console.error(`Error sending ${direction} swipe to backend:`, error);
-          // Optionally, show an error message to the user
-          // No need to reset card position as no animation is manually applied
+        this.feedbackMessage = error.response?.data?.error || 'Could not process swipe right now.';
       }
     },
     triggerLeftSwipe() {
-       console.log('triggerLeftSwipe called');
-       this.handleSwipe('left');
+      this.handleSwipe('left');
     },
     triggerRightSwipe() {
-       console.log('triggerRightSwipe called');
-       this.handleSwipe('right');
+      this.handleSwipe('right');
     },
-     removeTopCard() {
-         // Removes the first profile from the array, triggering Vue to update the view
-         this.profiles.shift();
-     }
-  }
+    removeTopCard() {
+      this.profiles.shift();
+    },
+    openPublicProfile() {
+      const userId = this.getSwipedUserId(this.currentProfile);
+      if (!userId) return;
+      this.$router.push({ name: 'PublicProfile', params: { userId } });
+    },
+  },
 };
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
-
-/* Basic Futuristic Theme */
-.discovery-page.futuristic-theme {
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); /* Dark gradient background */
-  color: #e0e0e0; /* Light text */
-  position: absolute; /* Position absolutely to fill the parent */
-  top: 0;
-  left: 0;
-  width: 100%; /* Fill parent width */
-  height: 100%; /* Fill parent height */
-  display: flex; /* Make this a flex container */
-  flex-direction: column; /* Stack children vertically */
-  align-items: center; /* Center content horizontally */
-  justify-content: center; /* Center content vertically */
-  /* Removed padding from here to prevent container overflow */
-  box-sizing: border-box; /* Include padding and border in the element's total width and height */
-  overflow: hidden; /* Prevent this element from causing scrollbars */
-  font-family: 'Poppins', sans-serif; /* Futuristic sans-serif font */
+.discovery-page {
+  min-height: 100vh;
+  padding: 24px clamp(12px, 2vw, 26px) 170px;
+  background: var(--theme-page-background);
+  color: var(--theme-text-primary);
 }
 
-.loading-message,
-.error-message,
-.no-users-message {
-    color: #ffffff;
-    font-size: 1.5rem;
-    margin-top: 50px;
-    text-align: center;
+.match-card {
+  border: 1px solid var(--theme-surface-border);
+  background: var(--theme-surface-elevated);
+  border-radius: 22px;
+  box-shadow: var(--theme-shadow-strong);
+  padding: clamp(16px, 1.6vw, 22px);
+  width: min(980px, 100%);
+  margin: 0 auto;
 }
 
-.centered-card-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%; /* Ensure it fills the discovery page width */
-    max-width: 1200px;
-    flex-grow: 0; /* Prevent this from growing and potentially pushing content */
-    /* Padding handled by the glass card */
-    box-sizing: border-box;
-    overflow: hidden; /* Prevent overflow within this container */
-    /* This container will handle vertical and horizontal centering of the card */
-}
-
-.glass-card {
+.match-header {
   display: flex;
-  flex-direction: column;
-  width: 95%;
-  max-width: 700px;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-  padding: 30px; /* Apply padding here instead of parent */
-  color: white;
-  overflow-y: auto; /* Allow vertical scrolling WITHIN the card */
-  max-height: 80vh;
-  position: relative;
-
-  opacity: 0;
-  transform: translateY(20px);
-  animation: fadeInScale 0.5s ease-out forwards;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
 }
 
-@keyframes fadeInScale {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.profile-header {
+.identity-row {
   display: flex;
+  gap: 12px;
   align-items: center;
-  margin-bottom: 25px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.profile-picture-small {
-  width: 80px;
-  height: 80px;
+.profile-picture,
+.profile-placeholder {
+  width: 82px;
+  height: 82px;
   border-radius: 50%;
   object-fit: cover;
-  margin-right: 20px;
-  border: 3px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 0 15px rgba(100, 255, 218, 0.3);
 }
 
-.placeholder-picture-small {
-   width: 80px;
-   height: 80px;
-   border-radius: 50%;
-   background-color: rgba(255, 255, 255, 0.1);
-   display: flex;
-   justify-content: center;
-   align-items: center;
-   font-size: 2rem;
-   color: rgba(255, 255, 255, 0.4);
-   margin-right: 20px;
-   border: 3px solid rgba(255, 255, 255, 0.3);
+.profile-placeholder {
+  border: 1px solid var(--theme-surface-border);
+  background: var(--theme-surface-1);
+  color: var(--theme-text-subtle);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
 }
 
 .user-name {
-  font-size: 2.2rem;
-  font-weight: 700;
   margin: 0;
-  background: linear-gradient(45deg, #fff, #a8b2d1);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--theme-heading-color);
+  font-size: clamp(1.9rem, 2.8vw, 2.8rem);
+  line-height: 1.08;
 }
 
-.profile-details {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
+.identity-meta {
+  margin-top: 6px;
+  color: var(--theme-text-secondary);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.info-section {
-  margin-top: 20px;
-  padding-top: 15px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+.view-profile-btn {
+  border-radius: 11px;
+  border: 1px solid var(--theme-button-secondary-border);
+  background: var(--theme-button-secondary-bg);
+  color: var(--theme-button-secondary-text);
+  padding: 10px 12px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.info-section:first-of-type {
-  border-top: none;
-  margin-top: 0;
-  padding-top: 0;
-}
-
-.info-section h4 {
-  color: #64ffda;
-  margin-top: 0;
-  margin-bottom: 10px;
-  font-size: 1.2rem;
+.details-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
 }
 
 .detail-item {
-  display: flex;
+  border: 1px solid var(--theme-surface-border);
+  background: var(--theme-surface-1);
+  border-radius: 10px;
+  padding: 9px 10px;
+  color: var(--theme-text-secondary);
+  display: inline-flex;
   align-items: center;
+  gap: 8px;
+}
+
+.detail-item i {
+  color: var(--theme-accent);
+}
+
+.info-section {
+  border-top: 1px solid var(--theme-divider);
+  margin-top: 12px;
+  padding-top: 12px;
+}
+
+.compact-info-grid {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
-  font-size: 1rem;
-  color: #e0e0e0;
 }
 
-.detail-item i.icon {
-  color: #64ffda;
-  font-size: 1.1rem;
+.compact-info-grid .info-section {
+  margin-top: 0;
+  border-top: 1px solid var(--theme-divider);
+  background: transparent;
+  border-radius: 0;
+  padding: 10px 0 0;
 }
 
-.goals-badges,
-.tags {
+.info-section-wide {
+  grid-column: 1 / -1;
+}
+
+.info-section h3 {
+  margin: 0 0 8px;
+  font-size: 1.08rem;
+  color: var(--theme-heading-color);
+}
+
+.info-section p {
+  margin: 0;
+  color: var(--theme-text-secondary);
+  line-height: 1.55;
+}
+
+.chip-list {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 8px;
 }
 
-.goal-badge,
-.tag {
-  background: rgba(255, 255, 255, 0.15);
-  color: #ffffff;
-  padding: 6px 12px;
-  border-radius: 15px;
-  font-size: 0.9rem;
-  backdrop-filter: blur(5px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+.chip {
+  border-radius: 999px;
+  border: 1px solid var(--theme-chip-border);
+  background: var(--theme-chip-bg);
+  color: var(--theme-chip-text);
+  padding: 6px 10px;
+  font-size: 0.86rem;
+  font-weight: 600;
 }
 
-.languages-section ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
+.clean-list {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--theme-text-secondary);
 }
 
-.languages-section li {
-    margin-bottom: 5px;
-    color: #e0e0e0;
-    font-size: 1rem;
+.clean-list li + li {
+  margin-top: 6px;
 }
 
-.languages-section li i.icon {
-    color: #64ffda;
-    margin-right: 8px;
+.social-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
-.social-links-section a {
-    color: #64ffda;
-    text-decoration: none;
-    transition: color 0.3s ease;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
+.social-links a {
+  color: var(--theme-link);
+  text-decoration: none;
+  font-weight: 600;
 }
 
-.social-links-section a:hover {
-    text-decoration: underline;
-    color: #ffffff;
+.social-links a:hover {
+  text-decoration: underline;
 }
 
-.card-actions-buttons {
-    display: flex;
-    justify-content: center;
-    gap: 20px;
-    margin-top: 30px;
-    padding-top: 20px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+.swipe-tip {
+  margin-top: 14px;
+  color: var(--theme-text-secondary);
+  text-align: center;
 }
 
-.action-button {
-  padding: 12px 25px;
+.swipe-tip kbd {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 7px;
+  border: 1px solid var(--theme-surface-border);
+  background: var(--theme-surface-1);
+  color: var(--theme-text-primary);
+  font-size: 0.88rem;
+}
+
+.feedback-message {
+  margin-top: 10px;
+  text-align: center;
+  color: var(--theme-accent);
+  font-weight: 600;
+}
+
+.floating-match-actions {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 80px;
+  z-index: 900;
+  display: flex;
+  gap: 10px;
+}
+
+.match-action {
+  border-radius: 999px;
+  padding: 12px 20px;
+  min-width: 170px;
   font-size: 1rem;
+  font-weight: 800;
+  border: 1px solid transparent;
   cursor: pointer;
-  border: none;
-  border-radius: 25px;
-  color: white;
-  transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  transition: transform 0.16s ease, filter 0.16s ease, box-shadow 0.2s ease;
+}
+
+.match-action:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.02);
 }
 
 .skip-button {
-  background: linear-gradient(45deg, #ff4d4f, #e02e30);
-}
-
-.skip-button:hover {
-    background: linear-gradient(45deg, #e02e30, #ff4d4f);
-    box-shadow: 0 6px 20px rgba(255, 77, 79, 0.4);
+  background: var(--theme-button-danger-bg);
+  color: var(--theme-button-danger-text);
+  border-color: transparent;
+  box-shadow: 0 8px 16px color-mix(in srgb, var(--theme-button-danger-bg) 32%, transparent);
 }
 
 .connect-button {
-    background: linear-gradient(45deg, #52c41a, #419e15);
+  background: var(--theme-accent);
+  color: var(--theme-button-primary-text);
+  border-color: color-mix(in srgb, var(--theme-accent) 60%, var(--theme-surface-border));
+  box-shadow: none;
 }
 
-.connect-button:hover {
-    background: linear-gradient(45deg, #419e15, #52c41a);
-    box-shadow: 0 6px 20px rgba(82, 196, 26, 0.4);
-}
-
-.action-button:active {
-  transform: scale(0.95);
-}
-
-.swipe-instruction {
+.state-message {
+  margin-top: 42px;
   text-align: center;
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 1rem;
-  margin-top: 20px;
-  z-index: 1;
+  color: var(--theme-text-secondary);
+}
+
+.error-message {
+  color: var(--theme-danger);
 }
 
 .empty-state {
+  border: 1px solid var(--theme-surface-border);
+  border-radius: 18px;
+  background: var(--theme-surface-elevated);
+  box-shadow: var(--theme-shadow-soft);
+  padding: 36px 16px;
   text-align: center;
-  color: #b0b0e0;
-  margin-top: 50px;
-  font-size: 1.2rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  color: var(--theme-text-secondary);
 }
 
 .empty-state i {
-    color: #64ffda;
-    font-size: 4rem;
-    margin-bottom: 20px;
+  font-size: 2.2rem;
+  margin-bottom: 10px;
+  color: var(--theme-accent);
 }
 
-/* Responsive adjustments */
-@media screen and (max-width: 768px) {
-  .centered-card-container {
-      padding: 10px;
+html[data-theme='futuristic'] .user-name {
+  text-shadow: var(--theme-heading-glow);
+}
+
+@media (max-width: 1020px) {
+  .compact-info-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .discovery-page {
+    padding: 14px 10px 138px;
   }
 
-  .glass-card {
-    width: 100%;
-    padding: 20px;
-    max-height: 90vh;
-  }
-
-  .profile-header {
+  .match-header {
     flex-direction: column;
-    align-items: flex-start;
   }
 
-  .profile-picture-small,
-  .placeholder-picture-small {
-    margin-right: 0;
-    margin-bottom: 15px;
+  .view-profile-btn {
+    width: 100%;
+    justify-content: center;
   }
 
-  .user-name {
-      font-size: 1.8rem;
+  .floating-match-actions {
+    width: calc(100vw - 20px);
+    bottom: 80px;
+    gap: 8px;
   }
 
-  .profile-details {
-      gap: 12px;
+  .match-action {
+    flex: 1;
+    min-width: 0;
+    justify-content: center;
+    padding: 10px 8px;
+    font-size: 0.92rem;
   }
-
-  .info-section {
-      margin-top: 15px;
-      padding-top: 10px;
-  }
-
-  .info-section h4 {
-      font-size: 1.1rem;
-  }
-
-  .detail-item {
-      font-size: 0.95rem;
-  }
-
-  .goal-badge,
-  .tag {
-      font-size: 0.85rem;
-  }
-
-  .card-actions-buttons {
-      flex-direction: row;
-      gap: 15px;
-      margin-top: 20px;
-      padding-top: 15px;
-  }
-
-  .action-button {
-      flex: 1;
-      padding: 10px 20px;
-      font-size: 0.9rem;
-  }
-
-   .swipe-instruction {
-       margin-top: 15px;
-       font-size: 0.9rem;
-   }
-
-   .loading-message,
-   .error-message,
-   .no-users-message {
-       margin-top: 30px;
-       font-size: 1.2rem;
-   }
 }
-
-</style> 
+</style>
