@@ -80,6 +80,7 @@
                     v-if="community.owner?.id === currentUserId || isUserMember(community.id)"
                     class="joined-pill"
                   >
+                    <i class="fas fa-check-circle"></i>
                     Joined
                   </span>
                 </p>
@@ -728,13 +729,23 @@ export default {
 }
 
 .joined-pill {
-  border-radius: 999px;
-  border: 1px solid var(--theme-chip-border);
-  background: var(--theme-chip-bg);
-  color: var(--theme-chip-text);
-  padding: 2px 8px;
-  font-size: 0.72rem;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--theme-accent) 54%, var(--theme-surface-border));
+  background: color-mix(in srgb, var(--theme-accent) 22%, var(--theme-surface-1));
+  color: var(--theme-text-primary);
+  padding: 3px 8px;
+  font-size: 0.7rem;
   font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.joined-pill i {
+  color: var(--theme-accent);
+  font-size: 0.72rem;
 }
 
 .community-title {
