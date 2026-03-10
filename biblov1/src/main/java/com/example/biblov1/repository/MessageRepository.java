@@ -9,6 +9,7 @@ import java.util.List;
 @Repository
 public interface MessageRepository extends JpaRepository<Message, Long> {
     List<Message> findByChatRoomOrderByTimestampAsc(ChatRoom chatRoom);
+    void deleteByChatRoomIn(List<ChatRoom> chatRooms);
 
     List<Message> findTop30ByChatRoomInAndSender_IdNotOrderByTimestampDesc(List<ChatRoom> chatRooms, Long senderId);
 

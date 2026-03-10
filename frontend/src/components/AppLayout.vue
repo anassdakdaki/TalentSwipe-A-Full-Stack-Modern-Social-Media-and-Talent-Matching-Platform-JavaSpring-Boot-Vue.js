@@ -13,6 +13,9 @@
         :unread-notifications="unreadCount"
         :user-name="currentUserName"
         :user-avatar-url="currentUserAvatar"
+        :show-search="topNavConfig.showSearch"
+        :search-placeholder="topNavConfig.searchPlaceholder"
+        :page-label="topNavConfig.pageLabel"
         @search="handleSearch"
         @toggle-notifications="toggleNotifications"
         @logout="logout"
@@ -154,6 +157,7 @@ export default {
         route: '',
       },
       lastSeenAt: localStorage.getItem('biblo.notifications.lastSeenAt') || new Date(0).toISOString(),
+      chatLastSeenAt: localStorage.getItem('biblo.notifications.chatLastSeenAt') || new Date(0).toISOString(),
       currentUserName: '',
       currentUserAvatar: '',
     };
@@ -165,8 +169,73 @@ export default {
     isTablet() {
       return this.viewportWidth >= 768 && this.viewportWidth < 1200;
     },
+    topNavConfig() {
+      const routeName = this.$route?.name;
+      switch (routeName) {
+        case 'Feed':
+          return {
+            showSearch: true,
+            searchPlaceholder: 'Search communities',
+            pageLabel: 'Feed',
+            searchTargetName: 'Communities',
+          };
+        case 'Communities':
+          return {
+            showSearch: true,
+            searchPlaceholder: 'Search communities',
+            pageLabel: 'Communities',
+            searchTargetName: 'Communities',
+          };
+        case 'CommunityDetail':
+          return {
+            showSearch: true,
+            searchPlaceholder: 'Search communities',
+            pageLabel: 'Community',
+            searchTargetName: 'Communities',
+          };
+        case 'Matches':
+          return {
+            showSearch: false,
+            searchPlaceholder: '',
+            pageLabel: 'Connect',
+            searchTargetName: null,
+          };
+        case 'Chat':
+          return {
+            showSearch: false,
+            searchPlaceholder: '',
+            pageLabel: 'Chat',
+            searchTargetName: null,
+          };
+        case 'Settings':
+          return {
+            showSearch: false,
+            searchPlaceholder: '',
+            pageLabel: 'Settings',
+            searchTargetName: null,
+          };
+        case 'Profile':
+        case 'PublicProfile':
+          return {
+            showSearch: false,
+            searchPlaceholder: '',
+            pageLabel: 'Profile',
+            searchTargetName: null,
+          };
+        default:
+          return {
+            showSearch: true,
+            searchPlaceholder: 'Search communities',
+            pageLabel: 'Workspace',
+            searchTargetName: 'Communities',
+          };
+      }
+    },
   },
   created() {
+    if (this.$route?.name === 'Chat') {
+      this.markChatSeen();
+    }
     this.fetchCurrentUser();
     this.fetchNotifications();
     this.startNotificationPolling();
@@ -184,6 +253,9 @@ export default {
   watch: {
     '$route.fullPath'() {
       this.isFabMenuOpen = false;
+      if (this.$route?.name === 'Chat') {
+        this.markChatSeen();
+      }
       if (this.notificationPollHandle == null) {
         this.fetchNotifications();
         this.startNotificationPolling();
@@ -220,12 +292,19 @@ export default {
       }
     },
     handleSearch(query) {
+      if (!this.topNavConfig.showSearch) {
+        return;
+      }
       const value = (query || '').trim();
       if (!value) {
         return;
       }
+      const targetRouteName = this.topNavConfig.searchTargetName;
+      if (!targetRouteName) {
+        return;
+      }
       this.$router.push({
-        name: 'Communities',
+        name: targetRouteName,
         query: { q: value },
       });
     },
@@ -272,8 +351,7 @@ export default {
         }
 
         this.notifications = fetchedNotifications;
-        this.unreadCount = Number(response.data.unreadCount || 0);
-        this.chatUnreadCount = Number(response.data?.countsByType?.MESSAGE || 0);
+        this.applyUnreadCounters(fetchedNotifications);
         this.knownNotificationIds = fetchedNotifications
           .map((item) => item?.id)
           .filter((id) => (typeof id === 'string' || typeof id === 'number'));
@@ -285,10 +363,54 @@ export default {
       }
     },
     markNotificationsSeen() {
-      this.lastSeenAt = new Date().toISOString();
+      const nowIso = new Date().toISOString();
+      this.lastSeenAt = nowIso;
+      this.chatLastSeenAt = nowIso;
       localStorage.setItem('biblo.notifications.lastSeenAt', this.lastSeenAt);
+      localStorage.setItem('biblo.notifications.chatLastSeenAt', this.chatLastSeenAt);
       this.unreadCount = 0;
       this.chatUnreadCount = 0;
+    },
+    markChatSeen() {
+      this.chatLastSeenAt = new Date().toISOString();
+      localStorage.setItem('biblo.notifications.chatLastSeenAt', this.chatLastSeenAt);
+      this.chatUnreadCount = 0;
+
+      // If current unread is only from message notifications, clear the top badge too.
+      this.applyUnreadCounters(this.notifications);
+    },
+    parseIsoOrEpoch(value) {
+      const parsed = Date.parse(value || '');
+      return Number.isNaN(parsed) ? 0 : parsed;
+    },
+    isNotificationUnread(notification, isMessage) {
+      const createdAtMs = this.parseIsoOrEpoch(notification?.createdAt);
+      if (!createdAtMs) {
+        return false;
+      }
+      const baseMs = isMessage
+        ? Math.max(this.parseIsoOrEpoch(this.lastSeenAt), this.parseIsoOrEpoch(this.chatLastSeenAt))
+        : this.parseIsoOrEpoch(this.lastSeenAt);
+      return createdAtMs > baseMs;
+    },
+    applyUnreadCounters(notifications) {
+      const items = Array.isArray(notifications) ? notifications : [];
+      let unread = 0;
+      let chatUnread = 0;
+
+      items.forEach((notification) => {
+        const type = notification?.type || '';
+        const isMessage = type === 'MESSAGE';
+        if (this.isNotificationUnread(notification, isMessage)) {
+          unread += 1;
+          if (isMessage) {
+            chatUnread += 1;
+          }
+        }
+      });
+
+      this.unreadCount = unread;
+      this.chatUnreadCount = this.$route?.name === 'Chat' ? 0 : chatUnread;
     },
     startNotificationPolling() {
       this.stopNotificationPolling();

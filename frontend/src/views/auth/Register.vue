@@ -97,6 +97,31 @@ export default {
     }
   },
   methods: {
+    extractToken(payload) {
+      if (!payload || typeof payload !== 'object') {
+        return ''
+      }
+      return payload.token || payload.accessToken || payload.jwt || ''
+    },
+    async loginAfterRegister() {
+      const loginResponse = await axios.post('http://localhost:8080/api/auth/login', {
+        email: this.email,
+        password: this.password
+      }, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+
+      const loginToken = this.extractToken(loginResponse.data)
+      if (!loginToken) {
+        throw new Error('Login token missing after registration')
+      }
+
+      localStorage.setItem('token', loginToken)
+      axios.defaults.headers.common['Authorization'] = `Bearer ${loginToken}`
+      this.$router.push('/authenticated/onboarding')
+    },
     async handleRegister() {
       if (this.password !== this.confirmPassword) {
         this.error = 'Passwords do not match'
@@ -136,12 +161,25 @@ export default {
           data: response.data
         })
         
-        if (response.data && response.data.message) {
-          console.log('Registration successful, redirecting to login...')
-          this.$router.push('/auth/login')
-        } else {
-          throw new Error('Invalid response from server')
+        const token = this.extractToken(response.data)
+        if (token) {
+          localStorage.setItem('token', token)
+          axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+          this.$router.push('/authenticated/onboarding')
+          return
         }
+
+        if (response.data && (response.data.message || response.status === 200 || response.status === 201)) {
+          try {
+            await this.loginAfterRegister()
+          } catch (loginErr) {
+            console.warn('Auto-login after registration failed, redirecting to login.', loginErr)
+            this.$router.push({ path: '/auth/login', query: { registered: '1' } })
+          }
+          return
+        }
+
+        throw new Error('Invalid response from server')
       } catch (err) {
         console.error('Registration error details:', {
           message: err.message,

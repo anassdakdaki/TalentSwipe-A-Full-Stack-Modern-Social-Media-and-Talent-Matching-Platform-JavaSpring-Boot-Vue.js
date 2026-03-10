@@ -1,15 +1,23 @@
 package com.example.biblov1.config;
 
 import com.example.biblov1.model.Community;
+import com.example.biblov1.model.ChatRoom;
+import com.example.biblov1.model.StudyMatch;
 import com.example.biblov1.model.User;
 import com.example.biblov1.model.UserProfile;
+import com.example.biblov1.repository.ChatRoomRepository;
 import com.example.biblov1.repository.CommunityRepository;
+import com.example.biblov1.repository.MessageRepository;
 import com.example.biblov1.repository.PostRepository;
+import com.example.biblov1.repository.StudyMatchRepository;
 import com.example.biblov1.repository.UserProfileRepository;
 import com.example.biblov1.repository.UserRepository;
+import com.example.biblov1.repository.UserSwipeRepository;
 import com.example.biblov1.service.CommunityService;
 import com.example.biblov1.service.BotPopulationService;
 import com.example.biblov1.service.PostService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -28,11 +36,16 @@ import java.util.function.Consumer;
 @Component
 @Profile("!test")
 public class DemoContentSeeder implements CommandLineRunner {
+    private static final Logger logger = LoggerFactory.getLogger(DemoContentSeeder.class);
 
     private final UserRepository userRepository;
     private final UserProfileRepository userProfileRepository;
     private final CommunityRepository communityRepository;
     private final PostRepository postRepository;
+    private final StudyMatchRepository studyMatchRepository;
+    private final UserSwipeRepository userSwipeRepository;
+    private final ChatRoomRepository chatRoomRepository;
+    private final MessageRepository messageRepository;
     private final CommunityService communityService;
     private final PostService postService;
     private final BotPopulationService botPopulationService;
@@ -42,6 +55,10 @@ public class DemoContentSeeder implements CommandLineRunner {
                              UserProfileRepository userProfileRepository,
                              CommunityRepository communityRepository,
                              PostRepository postRepository,
+                             StudyMatchRepository studyMatchRepository,
+                             UserSwipeRepository userSwipeRepository,
+                             ChatRoomRepository chatRoomRepository,
+                             MessageRepository messageRepository,
                              CommunityService communityService,
                              PostService postService,
                              BotPopulationService botPopulationService,
@@ -50,6 +67,10 @@ public class DemoContentSeeder implements CommandLineRunner {
         this.userProfileRepository = userProfileRepository;
         this.communityRepository = communityRepository;
         this.postRepository = postRepository;
+        this.studyMatchRepository = studyMatchRepository;
+        this.userSwipeRepository = userSwipeRepository;
+        this.chatRoomRepository = chatRoomRepository;
+        this.messageRepository = messageRepository;
         this.communityService = communityService;
         this.postService = postService;
         this.botPopulationService = botPopulationService;
@@ -67,6 +88,40 @@ public class DemoContentSeeder implements CommandLineRunner {
         }
 
         botPopulationService.seedBotProfilesAndCommunities();
+        clearUserMatchState("Alejandro Ruiz");
+    }
+
+    private void clearUserMatchState(String fullName) {
+        Optional<User> targetOpt = userRepository.findAll().stream()
+                .filter(user -> user.getName() != null && user.getName().trim().equalsIgnoreCase(fullName))
+                .findFirst();
+
+        if (targetOpt.isEmpty()) {
+            logger.info("Match reset skipped: user '{}' not found.", fullName);
+            return;
+        }
+
+        User target = targetOpt.get();
+        List<StudyMatch> matches = studyMatchRepository.findByUser1OrUser2(target, target);
+        List<ChatRoom> chatRooms = matches.isEmpty() ? List.of() : chatRoomRepository.findByStudyMatchIn(matches);
+
+        if (!chatRooms.isEmpty()) {
+            messageRepository.deleteByChatRoomIn(chatRooms);
+            chatRoomRepository.deleteAll(chatRooms);
+        }
+
+        if (!matches.isEmpty()) {
+            studyMatchRepository.deleteAll(matches);
+        }
+
+        userSwipeRepository.deleteBySwiperOrSwiped(target, target);
+
+        logger.info(
+                "Cleared match state for '{}': matchesRemoved={}, chatRoomsRemoved={}, swipesRemoved=all involving user.",
+                fullName,
+                matches.size(),
+                chatRooms.size()
+        );
     }
 
     private List<User> createSeedUsers() {

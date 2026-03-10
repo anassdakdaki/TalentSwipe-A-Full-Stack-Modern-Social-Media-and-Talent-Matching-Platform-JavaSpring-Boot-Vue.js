@@ -14,6 +14,7 @@ import java.util.List;
 @Repository
 public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
     Optional<ChatRoom> findByStudyMatch(StudyMatch studyMatch);
+    List<ChatRoom> findByStudyMatchIn(List<StudyMatch> matches);
     List<ChatRoom> findByUser1OrUser2(User user1, User user2);
 
     @Query("SELECT cr FROM ChatRoom cr WHERE (cr.user1 = :user OR cr.user2 = :user) AND cr.studyMatch.status = :status")

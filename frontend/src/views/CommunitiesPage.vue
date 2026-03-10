@@ -112,8 +112,31 @@
                   <i class="fas fa-graduation-cap"></i>
                 </div>
 
+                <div v-if="community.owner?.id === currentUserId" class="row-owner-actions">
+                  <button
+                    type="button"
+                    class="action-button view-button"
+                    @click="viewCommunity(community.id)"
+                  >
+                    View
+                  </button>
+                  <button
+                    type="button"
+                    class="action-button secondary-action"
+                    @click.stop="openEditCommunityModal(community)"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    class="action-button danger-action"
+                    @click.stop="deleteCommunity(community)"
+                  >
+                    Delete
+                  </button>
+                </div>
                 <button
-                  v-if="community.owner?.id === currentUserId || isUserMember(community.id)"
+                  v-else-if="isUserMember(community.id)"
                   type="button"
                   class="action-button view-button"
                   @click="viewCommunity(community.id)"
@@ -223,6 +246,57 @@
       </div>
     </div>
 
+    <div v-if="showEditCommunityModal" class="modal-overlay">
+      <div class="modal-content">
+        <h3>Edit Community</h3>
+        <form @submit.prevent="submitEditCommunity">
+          <div class="form-group">
+            <label for="editCommunityName">Community Name</label>
+            <input type="text" id="editCommunityName" v-model="editCommunity.name" required maxlength="120" />
+          </div>
+
+          <div class="form-group">
+            <label for="editCommunityDescription">Description</label>
+            <textarea id="editCommunityDescription" v-model="editCommunity.description" required maxlength="1200"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="editCommunityTags">Tags (comma-separated)</label>
+            <input type="text" id="editCommunityTags" v-model="editCommunityTagsInput" placeholder="study, internship, design" />
+          </div>
+
+          <div class="form-group image-group">
+            <label>Community Cover (optional)</label>
+            <input
+              id="editCommunityImage"
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              class="file-input"
+              @change="handleEditCommunityImageSelection"
+            />
+            <div class="image-controls">
+              <label for="editCommunityImage" class="action-button secondary-btn">Choose Image</label>
+              <button
+                v-if="editImagePreviewUrl"
+                type="button"
+                class="action-button ghost-btn"
+                @click="clearEditCommunityImage"
+              >
+                Remove
+              </button>
+            </div>
+            <p class="helper-text">PNG, JPG, WEBP up to 10MB recommended.</p>
+            <img v-if="editImagePreviewUrl" :src="editImagePreviewUrl" alt="Community cover preview" class="image-preview" />
+          </div>
+
+          <div class="modal-actions">
+            <button type="submit" class="action-button create-button">Save Changes</button>
+            <button type="button" @click="closeEditCommunityModal" class="action-button cancel-button">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <AppAlert
       ref="appAlert"
       :title="alertTitle"
@@ -261,14 +335,25 @@ export default {
       currentUserId: null,
       userJoinedCommunities: [],
       showCreateCommunityModal: false,
+      showEditCommunityModal: false,
       newCommunity: {
         name: '',
         description: '',
         tags: [],
       },
+      editCommunity: {
+        id: null,
+        name: '',
+        description: '',
+        tags: [],
+      },
       newCommunityTagsInput: '',
+      editCommunityTagsInput: '',
       selectedImageFile: null,
       imagePreviewUrl: '',
+      editSelectedImageFile: null,
+      editImagePreviewUrl: '',
+      editRemoveExistingImage: false,
       showAlert: false,
       alertTitle: '',
       alertMessage: '',
@@ -339,6 +424,12 @@ export default {
   watch: {
     newCommunityTagsInput(newVal) {
       this.newCommunity.tags = newVal
+        .split(',')
+        .map((tag) => tag.trim())
+        .filter((tag) => tag.length > 0);
+    },
+    editCommunityTagsInput(newVal) {
+      this.editCommunity.tags = newVal
         .split(',')
         .map((tag) => tag.trim())
         .filter((tag) => tag.length > 0);
@@ -490,6 +581,27 @@ export default {
     closeCreateCommunityModal() {
       this.showCreateCommunityModal = false;
     },
+    openEditCommunityModal(community) {
+      this.showEditCommunityModal = true;
+      this.editCommunity = {
+        id: community.id,
+        name: community.name || '',
+        description: community.description || '',
+        tags: [...(community.tags || [])],
+      };
+      this.editCommunityTagsInput = (community.tags || []).join(', ');
+      this.editSelectedImageFile = null;
+      this.editImagePreviewUrl = community.imageUrl || '';
+      this.editRemoveExistingImage = false;
+    },
+    closeEditCommunityModal() {
+      this.showEditCommunityModal = false;
+      this.editCommunity = { id: null, name: '', description: '', tags: [] };
+      this.editCommunityTagsInput = '';
+      this.editSelectedImageFile = null;
+      this.editImagePreviewUrl = '';
+      this.editRemoveExistingImage = false;
+    },
     handleCommunityImageSelection(event) {
       const file = event.target.files?.[0];
       if (!file) return;
@@ -512,10 +624,40 @@ export default {
       };
       reader.readAsDataURL(file);
     },
+    handleEditCommunityImageSelection(event) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      if (!file.type.startsWith('image/')) {
+        this.showAlertMessage('Invalid File', 'Please select an image file.');
+        return;
+      }
+
+      const tenMb = 10 * 1024 * 1024;
+      if (file.size > tenMb) {
+        this.showAlertMessage('File Too Large', 'Image should be 10MB or smaller.');
+        return;
+      }
+
+      this.editSelectedImageFile = file;
+      this.editRemoveExistingImage = false;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.editImagePreviewUrl = e.target?.result || '';
+      };
+      reader.readAsDataURL(file);
+    },
     clearCommunityImage() {
       this.selectedImageFile = null;
       this.imagePreviewUrl = '';
       const input = document.getElementById('communityImage');
+      if (input) input.value = '';
+    },
+    clearEditCommunityImage() {
+      this.editSelectedImageFile = null;
+      this.editImagePreviewUrl = '';
+      this.editRemoveExistingImage = true;
+      const input = document.getElementById('editCommunityImage');
       if (input) input.value = '';
     },
     async submitCreateCommunity() {
@@ -548,6 +690,61 @@ export default {
       } catch (error) {
         console.error('Error creating community:', error);
         this.showAlertMessage('Error', `Failed to create community: ${error.response?.data?.error || error.message}`);
+      }
+    },
+    async submitEditCommunity() {
+      if (!this.editCommunity.id) {
+        return;
+      }
+      try {
+        const token = localStorage.getItem('token');
+        const formData = new FormData();
+        formData.append('name', this.editCommunity.name.trim());
+        formData.append('description', this.editCommunity.description.trim());
+        formData.append('tags', JSON.stringify(this.editCommunity.tags || []));
+        if (this.editSelectedImageFile) {
+          formData.append('imageFile', this.editSelectedImageFile);
+        }
+        if (this.editRemoveExistingImage) {
+          formData.append('removeImage', 'true');
+        }
+
+        await axios.put(`${API_BASE_URL}/api/communities/${this.editCommunity.id}`, formData, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+
+        this.showAlertMessage('Success', 'Community updated successfully.');
+        this.closeEditCommunityModal();
+        await this.fetchCommunities();
+      } catch (error) {
+        console.error('Error updating community:', error);
+        this.showAlertMessage('Error', `Failed to update community: ${error.response?.data?.error || error.message}`);
+      }
+    },
+    async deleteCommunity(community) {
+      if (!community?.id) {
+        return;
+      }
+      const confirmed = window.confirm(
+        `Delete "${community.name}"? This will remove its posts and memberships and cannot be undone.`
+      );
+      if (!confirmed) {
+        return;
+      }
+      try {
+        const token = localStorage.getItem('token');
+        await axios.delete(`${API_BASE_URL}/api/communities/${community.id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        this.showAlertMessage('Success', 'Community deleted successfully.');
+        await this.fetchCommunities();
+        await this.fetchUserCommunities();
+      } catch (error) {
+        console.error('Error deleting community:', error);
+        this.showAlertMessage('Error', `Failed to delete community: ${error.response?.data?.error || error.message}`);
       }
     },
     showAlertMessage(title, message) {
@@ -793,6 +990,12 @@ export default {
   gap: 8px;
 }
 
+.row-owner-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
 .row-cover {
   width: 100%;
   aspect-ratio: 16 / 9;
@@ -825,6 +1028,20 @@ export default {
   background: var(--theme-button-primary-bg);
   color: var(--theme-button-primary-text);
   box-shadow: var(--theme-button-primary-shadow);
+}
+
+.secondary-action {
+  background: var(--theme-button-secondary-bg);
+  color: var(--theme-button-secondary-text);
+  border: 1px solid var(--theme-button-secondary-border);
+  box-shadow: none;
+}
+
+.danger-action {
+  background: color-mix(in srgb, var(--theme-danger) 22%, var(--theme-surface-1));
+  color: var(--theme-danger);
+  border: 1px solid color-mix(in srgb, var(--theme-danger) 50%, var(--theme-surface-border));
+  box-shadow: none;
 }
 
 .communities-side {
@@ -1057,6 +1274,10 @@ html[data-theme='futuristic'] .page-title {
     grid-column: 1 / -1;
     flex-direction: row;
     align-items: center;
+  }
+
+  .row-owner-actions {
+    grid-template-columns: repeat(3, minmax(84px, 1fr));
   }
 
   .row-cover {

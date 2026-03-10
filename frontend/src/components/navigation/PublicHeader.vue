@@ -2,7 +2,7 @@
   <header class="public-header">
     <div class="public-header-inner page-shell">
       <router-link to="/" class="brand">
-        <span class="brand-badge">B</span>
+        <img src="/favicon.ico" alt="Biblo logo" class="brand-logo" />
         <span class="brand-name">Biblo</span>
       </router-link>
 
@@ -47,16 +47,13 @@ export default {
   gap: 8px;
 }
 
-.brand-badge {
+.brand-logo {
   width: 30px;
   height: 30px;
-  border-radius: 9px;
-  background: var(--theme-button-primary-bg);
-  color: var(--theme-button-primary-text);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
+  border-radius: 0;
+  object-fit: cover;
+  border: 0;
+  box-shadow: none;
 }
 
 .brand-name {

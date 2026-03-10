@@ -7,6 +7,7 @@ import com.example.biblov1.service.CommunityService;
 import com.example.biblov1.service.FileStorageService;
 import com.example.biblov1.service.UserService;
 import com.example.biblov1.payload.request.CreateCommunityRequest;
+import com.example.biblov1.payload.request.UpdateCommunityRequest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -92,6 +93,85 @@ public class CommunityController {
                     imageUrl
             );
             return ResponseEntity.status(HttpStatus.CREATED).body(community);
+        } catch (RuntimeException ex) {
+            return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
+        }
+    }
+
+    @PutMapping(value = "/{communityId}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> updateCommunity(
+            @PathVariable Long communityId,
+            @RequestAttribute("userId") Long userId,
+            @RequestBody UpdateCommunityRequest request
+    ) {
+        try {
+            Community community = communityService.updateCommunity(
+                    communityId,
+                    userId,
+                    request.getName(),
+                    request.getDescription(),
+                    request.getTags(),
+                    null,
+                    Boolean.TRUE.equals(request.getRemoveImage())
+            );
+            return ResponseEntity.ok(community);
+        } catch (IllegalStateException ex) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", ex.getMessage()));
+        } catch (RuntimeException ex) {
+            return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
+        }
+    }
+
+    @PutMapping(value = "/{communityId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> updateCommunityWithImage(
+            @PathVariable Long communityId,
+            @RequestAttribute("userId") Long userId,
+            @RequestParam("name") String name,
+            @RequestParam("description") String description,
+            @RequestParam(value = "tags", required = false) String tagsRaw,
+            @RequestParam(value = "removeImage", required = false, defaultValue = "false") Boolean removeImage,
+            @RequestParam(value = "imageFile", required = false) MultipartFile imageFile
+    ) {
+        try {
+            String imageUrl = null;
+            if (imageFile != null && !imageFile.isEmpty()) {
+                if (imageFile.getContentType() == null || !imageFile.getContentType().startsWith("image/")) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "Only image files are allowed for community cover."));
+                }
+                long maxRecommendedSize = 10L * 1024L * 1024L;
+                if (imageFile.getSize() > maxRecommendedSize) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "Image should be 10MB or smaller."));
+                }
+                imageUrl = fileStorageService.storeFile(imageFile);
+            }
+
+            Community community = communityService.updateCommunity(
+                    communityId,
+                    userId,
+                    name,
+                    description,
+                    parseTags(tagsRaw),
+                    imageUrl,
+                    Boolean.TRUE.equals(removeImage)
+            );
+            return ResponseEntity.ok(community);
+        } catch (IllegalStateException ex) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", ex.getMessage()));
+        } catch (RuntimeException ex) {
+            return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/{communityId}")
+    public ResponseEntity<?> deleteCommunity(
+            @PathVariable Long communityId,
+            @RequestAttribute("userId") Long userId
+    ) {
+        try {
+            communityService.deleteCommunity(communityId, userId);
+            return ResponseEntity.ok(Map.of("message", "Community deleted successfully."));
+        } catch (IllegalStateException ex) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", ex.getMessage()));
         } catch (RuntimeException ex) {
             return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
         }

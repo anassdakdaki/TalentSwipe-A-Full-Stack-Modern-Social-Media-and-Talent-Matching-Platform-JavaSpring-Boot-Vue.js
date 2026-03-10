@@ -27,10 +27,16 @@
               </div>
             </div>
 
-            <button class="view-profile-btn" @click="openPublicProfile">
-              <i class="fas fa-id-card"></i>
-              View Full Profile
-            </button>
+            <div class="header-actions">
+              <button class="refresh-btn" @click="refreshProfiles" :disabled="loading">
+                <i class="fas fa-rotate-right"></i>
+                Refresh
+              </button>
+              <button class="view-profile-btn" @click="openPublicProfile">
+                <i class="fas fa-id-card"></i>
+                View Full Profile
+              </button>
+            </div>
           </header>
 
           <div class="identity-facts" v-if="currentProfile.age || currentProfile.gender">
@@ -103,23 +109,29 @@
           Tip: use <kbd>&larr;</kbd> to Skip and <kbd>&rarr;</kbd> to Connect
         </p>
 
-        <p v-if="feedbackMessage" class="feedback-message">{{ feedbackMessage }}</p>
+        <div class="action-zone">
+          <p v-if="feedbackMessage" class="feedback-message">{{ feedbackMessage }}</p>
 
-        <div class="floating-match-actions">
-          <button @click="triggerLeftSwipe" class="match-action skip-button">
-            <i class="fas fa-forward"></i>
-            <span>Skip</span>
-          </button>
-          <button @click="triggerRightSwipe" class="match-action connect-button">
-            <i class="fas fa-handshake"></i>
-            <span>Connect</span>
-          </button>
+          <div class="floating-match-actions">
+            <button @click="triggerLeftSwipe" class="match-action skip-button">
+              <i class="fas fa-forward"></i>
+              <span>Skip</span>
+            </button>
+            <button @click="triggerRightSwipe" class="match-action connect-button">
+              <i class="fas fa-handshake"></i>
+              <span>Connect</span>
+            </button>
+          </div>
         </div>
       </template>
 
       <div v-else class="empty-state">
         <i class="fas fa-search"></i>
         <p>Nothing to discover right now. Come back later.</p>
+        <button type="button" class="refresh-empty-btn" @click="refreshProfiles" :disabled="loading">
+          <i class="fas fa-rotate-right"></i>
+          Refresh Candidates
+        </button>
       </div>
     </div>
   </div>
@@ -221,8 +233,6 @@ export default {
 
         if (response.data?.match) {
           this.feedbackMessage = 'Mutual match! You can message each other now.';
-        } else if (swipeType === 'LIKE') {
-          this.feedbackMessage = 'Connection request sent.';
         } else {
           this.feedbackMessage = '';
         }
@@ -241,6 +251,10 @@ export default {
     removeTopCard() {
       this.profiles.shift();
     },
+    refreshProfiles() {
+      this.feedbackMessage = '';
+      this.fetchProfiles();
+    },
     openPublicProfile() {
       const userId = this.getSwipedUserId(this.currentProfile);
       if (!userId) return;
@@ -253,7 +267,7 @@ export default {
 <style scoped>
 .discovery-page {
   min-height: 100vh;
-  padding: 24px clamp(12px, 2vw, 26px) 170px;
+  padding: 24px clamp(12px, 2vw, 26px) 110px;
   background: var(--theme-page-background);
   color: var(--theme-text-primary);
 }
@@ -274,6 +288,12 @@ export default {
   align-items: flex-start;
   gap: 12px;
   margin-bottom: 12px;
+}
+
+.header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .identity-row {
@@ -326,6 +346,25 @@ export default {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+}
+
+.refresh-btn {
+  border-radius: 11px;
+  border: 1px solid var(--theme-button-secondary-border);
+  background: var(--theme-button-secondary-bg);
+  color: var(--theme-button-secondary-text);
+  padding: 10px 12px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.refresh-btn:disabled,
+.refresh-empty-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .identity-facts {
@@ -451,10 +490,19 @@ export default {
   text-decoration: underline;
 }
 
+.action-zone {
+  width: min(980px, 100%);
+  margin: 14px auto 0;
+  position: sticky;
+  bottom: 18px;
+  z-index: 20;
+}
+
 .swipe-tip {
-  margin-top: 14px;
+  margin: 8px 0 0;
   color: var(--theme-text-secondary);
   text-align: center;
+  font-size: 0.92rem;
 }
 
 .swipe-tip kbd {
@@ -468,18 +516,16 @@ export default {
 }
 
 .feedback-message {
-  margin-top: 10px;
+  margin: 0 0 8px;
   text-align: center;
   color: var(--theme-accent);
   font-weight: 600;
 }
 
 .floating-match-actions {
-  position: fixed;
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: 80px;
-  z-index: 900;
+  margin-top: 10px;
+  position: static;
+  justify-content: center;
   display: flex;
   gap: 10px;
 }
@@ -543,6 +589,20 @@ export default {
   color: var(--theme-accent);
 }
 
+.refresh-empty-btn {
+  margin-top: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--theme-button-secondary-border);
+  background: var(--theme-button-secondary-bg);
+  color: var(--theme-button-secondary-text);
+  padding: 9px 12px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
 html[data-theme='futuristic'] .user-name {
   text-shadow: var(--theme-heading-glow);
 }
@@ -555,21 +615,30 @@ html[data-theme='futuristic'] .user-name {
 
 @media (max-width: 760px) {
   .discovery-page {
-    padding: 14px 10px 138px;
+    padding: 14px 10px 120px;
   }
 
   .match-header {
     flex-direction: column;
   }
 
-  .view-profile-btn {
+  .header-actions {
     width: 100%;
+  }
+
+  .refresh-btn,
+  .view-profile-btn {
+    flex: 1;
     justify-content: center;
   }
 
+  .action-zone {
+    width: 100%;
+    bottom: 14px;
+  }
+
   .floating-match-actions {
-    width: calc(100vw - 20px);
-    bottom: 80px;
+    width: 100%;
     gap: 8px;
   }
 

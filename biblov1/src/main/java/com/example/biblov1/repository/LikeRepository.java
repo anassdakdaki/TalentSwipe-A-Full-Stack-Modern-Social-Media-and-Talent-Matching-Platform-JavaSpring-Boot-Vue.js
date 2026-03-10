@@ -19,6 +19,7 @@ public interface LikeRepository extends JpaRepository<Like, Long> {
     }
 
     Optional<Like> findByPostAndUser(Post post, User user);
+    void deleteByPostIn(List<Post> posts);
     long countByPost(Post post);
     List<Like> findByUser(User user);
     List<Like> findTop30ByPost_Author_IdAndUser_IdNotOrderByCreatedAtDesc(Long authorId, Long userId);

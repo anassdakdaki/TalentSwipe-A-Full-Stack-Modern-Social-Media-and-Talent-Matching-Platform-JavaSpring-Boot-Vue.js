@@ -1,7 +1,7 @@
 <template>
   <aside :class="['desktop-sidebar', { collapsed }]">
     <div class="sidebar-brand" :title="collapsed ? 'Biblo' : ''">
-      <span class="brand-mark">B</span>
+      <img src="/favicon.ico" alt="Biblo logo" class="brand-mark" />
       <span v-if="!collapsed" class="brand-name">Biblo</span>
     </div>
 
@@ -103,13 +103,10 @@ export default {
 .brand-mark {
   width: 30px;
   height: 30px;
-  border-radius: 10px;
-  background: var(--theme-button-primary-bg);
-  color: var(--theme-button-primary-text);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
+  border-radius: 0;
+  object-fit: cover;
+  border: 0;
+  box-shadow: none;
 }
 
 .brand-name {

@@ -134,6 +134,18 @@ public class UserProfileService {
         // Fetch all profiles, then filter out swiped ones
         return profileRepository.findAll().stream()
                                 .filter(profile -> !swipedUserIds.contains(profile.getUser().getId()))
+                                .filter(this::hasRequiredDiscoveryProfileInfo)
                                 .collect(Collectors.toList());
+    }
+
+    private boolean hasRequiredDiscoveryProfileInfo(UserProfile profile) {
+        if (profile == null || profile.getUser() == null || profile.getUser().getId() == null) {
+            return false;
+        }
+        return hasText(profile.getName()) && hasText(profile.getMajor());
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.trim().isEmpty();
     }
 }
