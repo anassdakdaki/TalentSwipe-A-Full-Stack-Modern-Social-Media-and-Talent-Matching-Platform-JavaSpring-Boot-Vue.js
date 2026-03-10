@@ -33,23 +33,26 @@
             </button>
           </header>
 
-          <div class="details-list">
-            <div class="detail-item" v-if="currentProfile.age">
+          <div class="identity-facts" v-if="currentProfile.age || currentProfile.gender">
+            <span class="fact-chip" v-if="currentProfile.age">
               <i class="fas fa-birthday-cake"></i>
-              <span>{{ currentProfile.age }} years old</span>
-            </div>
-            <div class="detail-item" v-if="currentProfile.gender">
+              {{ currentProfile.age }} years old
+            </span>
+            <span class="fact-chip" v-if="currentProfile.gender">
               <i class="fas fa-venus-mars"></i>
-              <span>{{ currentProfile.gender }}</span>
-            </div>
-            <div class="detail-item" v-if="currentProfile.major">
+              {{ currentProfile.gender }}
+            </span>
+          </div>
+
+          <div class="context-row" v-if="currentProfile.major || currentProfile.university">
+            <span class="context-item" v-if="currentProfile.major">
               <i class="fas fa-briefcase"></i>
-              <span>{{ currentProfile.major }}</span>
-            </div>
-            <div class="detail-item" v-if="currentProfile.university">
+              {{ currentProfile.major }}
+            </span>
+            <span class="context-item" v-if="currentProfile.university">
               <i class="fas fa-graduation-cap"></i>
-              <span>{{ currentProfile.university }}</span>
-            </div>
+              {{ currentProfile.university }}
+            </span>
           </div>
 
           <section v-if="currentProfile.bio" class="info-section">
@@ -104,11 +107,11 @@
 
         <div class="floating-match-actions">
           <button @click="triggerLeftSwipe" class="match-action skip-button">
-            <i class="fas fa-ban"></i>
+            <i class="fas fa-forward"></i>
             <span>Skip</span>
           </button>
           <button @click="triggerRightSwipe" class="match-action connect-button">
-            <i class="fas fa-user-plus"></i>
+            <i class="fas fa-handshake"></i>
             <span>Connect</span>
           </button>
         </div>
@@ -325,26 +328,48 @@ export default {
   gap: 8px;
 }
 
-.details-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+.identity-facts {
+  margin: 10px 0 8px;
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 12px;
 }
 
-.detail-item {
+.fact-chip {
   border: 1px solid var(--theme-surface-border);
   background: var(--theme-surface-1);
-  border-radius: 10px;
-  padding: 9px 10px;
+  border-radius: 999px;
+  padding: 6px 12px;
   color: var(--theme-text-secondary);
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  font-size: 0.92rem;
+  font-weight: 600;
 }
 
-.detail-item i {
+.fact-chip i,
+.context-item i {
   color: var(--theme-accent);
+}
+
+.context-row {
+  border: 1px solid var(--theme-surface-border);
+  background: var(--theme-surface-1);
+  border-radius: 10px;
+  padding: 9px 12px;
+  margin-bottom: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.context-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--theme-text-secondary);
+  font-weight: 500;
 }
 
 .info-section {
