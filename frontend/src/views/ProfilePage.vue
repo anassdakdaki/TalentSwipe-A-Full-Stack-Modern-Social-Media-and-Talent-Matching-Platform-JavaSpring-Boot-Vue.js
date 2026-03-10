@@ -427,7 +427,7 @@ export default {
 .profile-page {
   min-height: 100vh;
   width: 100%;
-  padding: 24px clamp(12px, 2vw, 28px) 120px;
+  padding: 24px clamp(12px, 2vw, 28px) 92px;
   background: var(--theme-page-background);
   color: var(--theme-text-primary);
 }
@@ -450,6 +450,12 @@ export default {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--page-content-gap);
+  align-items: start;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
 }
 
 .profile-section {
@@ -702,6 +708,17 @@ export default {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+  position: sticky;
+  bottom: 12px;
+  z-index: 20;
+  width: fit-content;
+  margin-left: auto;
+  border: 1px solid var(--theme-surface-border);
+  background: color-mix(in srgb, var(--theme-surface-elevated) 92%, transparent);
+  border-radius: 14px;
+  padding: 10px;
+  box-shadow: var(--theme-shadow-soft);
+  backdrop-filter: blur(10px);
 }
 
 .save-button,
@@ -767,6 +784,11 @@ export default {
 
   .action-buttons {
     flex-direction: column;
+    position: static;
+    width: 100%;
+    margin-left: 0;
+    border-radius: 12px;
+    padding: 8px;
   }
 
   .action-buttons button {
