@@ -1,229 +1,238 @@
 <template>
-  <div class="home-container">
-    <div class="dashboard-header">
-      <h1>Welcome to Biblov</h1>
-      <p class="subtitle">Connect with like-minded people</p>
-    </div>
+  <div class="landing-page">
+    <PublicHeader />
+    <div class="landing-shell page-shell">
+      <section class="hero-card">
+        <div class="hero-copy">
+          <p class="eyebrow">Study. Network. Build.</p>
+          <h1>One platform for students, professionals, and communities.</h1>
+          <p class="lead">
+            Discover communities, connect with like-minded people, and collaborate through profiles, posts, and chat.
+          </p>
+          <div class="hero-cta">
+            <router-link to="/auth/register" class="primary-btn">Get Started</router-link>
+            <router-link to="/auth/login" class="secondary-btn">I already have an account</router-link>
+          </div>
+        </div>
 
-    <div class="dashboard-grid">
-      <!-- Study Groups Card -->
-      <div class="dashboard-card groups">
-        <div class="card-header">
-          <h2>Study Groups</h2>
-          <button @click="createGroup" class="action-button">
-            <i class="fas fa-plus"></i> Create Group
-          </button>
-        </div>
-        <div class="groups-list">
-          <div v-if="groups.length === 0" class="empty-state">
-            <i class="fas fa-users"></i>
-            <p>No active study groups</p>
-          </div>
-          <div v-else v-for="group in groups" :key="group.id" class="group-item">
-            <div class="group-content">
-              <h3>{{ group.name }}</h3>
-              <p class="subject">{{ group.subject }}</p>
-              <span class="meeting-time">Next meeting: {{ formatDateTime(group.nextMeeting) }}</span>
-            </div>
-            <button class="join-button">Join</button>
+        <div class="hero-panel">
+          <div class="panel-card">
+            <h3>What you can do</h3>
+            <ul>
+              <li>Build a professional public profile</li>
+              <li>Join focused school and career communities</li>
+              <li>Match for study, networking, and collaboration</li>
+              <li>Chat instantly after matching</li>
+            </ul>
           </div>
         </div>
-      </div>
+      </section>
+
+      <section class="feature-grid">
+        <article class="feature-card">
+          <i class="fas fa-users"></i>
+          <h3>Communities</h3>
+          <p>Topic-driven spaces for classes, projects, and career growth.</p>
+        </article>
+        <article class="feature-card">
+          <i class="fas fa-user-plus"></i>
+          <h3>Connect</h3>
+          <p>Discover people and send meaningful connection requests.</p>
+        </article>
+        <article class="feature-card">
+          <i class="fas fa-comments"></i>
+          <h3>Real-time Chat</h3>
+          <p>Talk directly once both sides match and start collaborating.</p>
+        </article>
+      </section>
     </div>
   </div>
 </template>
 
 <script>
-import axios from 'axios'
+import PublicHeader from '@/components/navigation/PublicHeader.vue';
 
 export default {
   name: 'Home',
-  data() {
-    return {
-      loading: false,
-      groups: []
-    }
+  components: {
+    PublicHeader,
   },
-  methods: {
-    async fetchDashboardData() {
-      this.loading = true
-      try {
-        console.log('Fetching dashboard data...')
-        const token = localStorage.getItem('token')
-        console.log('Token available:', !!token)
-        
-        const response = await axios.get('http://localhost:8080/api/dashboard', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        })
-        console.log('Dashboard response:', response.data)
-        
-        const data = response.data
-        this.groups = Array.isArray(data.groups) ? data.groups : []
-      } catch (error) {
-        console.error('Error fetching dashboard data:', {
-          message: error.message,
-          response: error.response?.data,
-          status: error.response?.status,
-          headers: error.response?.headers
-        })
-        
-        // Initialize with empty data on error
-        this.groups = []
-        
-        if (error.response?.status === 401) {
-          // Token expired or invalid
-          localStorage.removeItem('token')
-          this.$router.push('/auth/login')
-        } else {
-          alert('Failed to fetch dashboard data. Please try again.')
-        }
-      } finally {
-        this.loading = false
-      }
-    },
-    formatDateTime(dateTimeString) {
-      return new Date(dateTimeString).toLocaleString()
-    },
-    createGroup() {
-      // TODO: Implement group creation
-      console.log('Create group clicked')
-    }
-  },
-  mounted() {
-    this.fetchDashboardData()
-  }
-}
+};
 </script>
 
 <style scoped>
-.home-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem;
+.landing-page {
+  min-height: 100vh;
+  background: var(--theme-page-background);
+  color: var(--theme-text-primary);
+  padding: 0 0 40px;
 }
 
-.dashboard-header {
-  text-align: center;
-  margin-bottom: 2rem;
-}
-
-.dashboard-header h1 {
-  font-size: 2.5rem;
-  color: #2c3e50;
-  margin-bottom: 0.5rem;
-}
-
-.subtitle {
-  color: #666;
-  font-size: 1.2rem;
-}
-
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem;
-}
-
-.dashboard-card {
-  background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s;
-}
-
-.dashboard-card:hover {
-  transform: translateY(-5px);
-}
-
-.card-header {
+.landing-shell {
+  padding: 16px clamp(12px, 2vw, 24px) 0;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.card-header h2 {
-  font-size: 1.5rem;
-  color: #2c3e50;
-  margin: 0;
-}
-
-.action-button {
-  background: #4CAF50;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
+.hero-card {
+  border: 1px solid var(--theme-surface-border);
   border-radius: 20px;
-  cursor: pointer;
+  background: var(--theme-surface-elevated);
+  box-shadow: var(--theme-shadow-soft);
+  padding: clamp(18px, 3vw, 34px);
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
+  gap: 16px;
+}
+
+.eyebrow {
+  margin: 0 0 10px;
+  color: var(--theme-accent);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+}
+
+.hero-copy h1 {
+  margin: 0;
+  font-family: var(--theme-font-heading);
+  color: var(--theme-heading-color);
+  font-size: clamp(2rem, 3.6vw, 3.2rem);
+  line-height: 1.05;
+}
+
+.lead {
+  margin: 12px 0 0;
+  max-width: 700px;
+  color: var(--theme-text-secondary);
+  font-size: 1.02rem;
+  line-height: 1.6;
+}
+
+.hero-cta {
+  margin-top: 16px;
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  transition: background 0.2s;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
-.action-button:hover {
-  background: #45a049;
+.primary-btn,
+.secondary-btn {
+  text-decoration: none;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-weight: 700;
+  transition: transform 0.2s ease, filter 0.2s ease;
 }
 
-/* Groups Card */
-.groups-list {
-  max-height: 300px;
-  overflow-y: auto;
+.primary-btn {
+  border: none;
+  background: var(--theme-button-primary-bg);
+  color: var(--theme-button-primary-text);
+  box-shadow: var(--theme-button-primary-shadow);
 }
 
-.group-item {
+.secondary-btn {
+  border: 1px solid var(--theme-button-secondary-border);
+  background: var(--theme-button-secondary-bg);
+  color: var(--theme-button-secondary-text);
+}
+
+.primary-btn:hover,
+.secondary-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.03);
+}
+
+.hero-panel {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem;
-  border-bottom: 1px solid #eee;
+  align-items: stretch;
 }
 
-.group-content h3 {
-  margin: 0 0 0.5rem 0;
+.panel-card {
+  width: 100%;
+  border: 1px solid var(--theme-surface-border);
+  border-radius: 14px;
+  background: var(--theme-surface-1);
+  padding: 14px;
+}
+
+.panel-card h3 {
+  margin: 0 0 10px;
+  color: var(--theme-heading-color);
+  font-family: var(--theme-font-heading);
+}
+
+.panel-card ul {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--theme-text-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.feature-card {
+  border: 1px solid var(--theme-surface-border);
+  border-radius: 14px;
+  background: var(--theme-surface-elevated);
+  box-shadow: var(--theme-shadow-soft);
+  padding: 14px;
+}
+
+.feature-card i {
+  color: var(--theme-accent);
   font-size: 1.1rem;
 }
 
-.subject {
-  color: #666;
-  font-size: 0.9rem;
+.feature-card h3 {
+  margin: 10px 0 6px;
+  color: var(--theme-heading-color);
+  font-family: var(--theme-font-heading);
 }
 
-.meeting-time {
-  font-size: 0.8rem;
-  color: #999;
-}
-
-.join-button {
-  background: #2196F3;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.join-button:hover {
-  background: #1976D2;
-}
-
-/* Empty States */
-.empty-state {
-  text-align: center;
-  padding: 2rem;
-  color: #999;
-}
-
-.empty-state i {
-  font-size: 2rem;
-  margin-bottom: 1rem;
-}
-
-.empty-state p {
+.feature-card p {
   margin: 0;
+  color: var(--theme-text-secondary);
+  line-height: 1.5;
+  font-size: 0.94rem;
 }
-</style> 
+
+html[data-theme='futuristic'] .hero-copy h1,
+html[data-theme='futuristic'] .panel-card h3 {
+  text-shadow: var(--theme-heading-glow);
+}
+
+@media (max-width: 960px) {
+  .hero-card {
+    grid-template-columns: 1fr;
+  }
+
+  .feature-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .landing-page {
+    padding-bottom: 26px;
+  }
+
+  .hero-copy h1 {
+    font-size: clamp(1.7rem, 8vw, 2.2rem);
+  }
+
+  .hero-cta {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+}
+</style>

@@ -391,6 +391,7 @@ public class BotPopulationService {
             }
         }
 
+        ensureBotCliqueMatches(configuredBots);
         seedCrossCommunityMembershipAndPosts(configuredBots);
         seedCrossBotEngagement(configuredBots);
 
@@ -420,6 +421,29 @@ public class BotPopulationService {
                 .map(User::getId)
                 .distinct()
                 .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<BotDefinitionSnapshot> getActiveBotDefinitionsSnapshot() {
+        return getActiveBotDefinitions().stream()
+                .map(definition -> new BotDefinitionSnapshot(
+                        definition.name(),
+                        definition.email(),
+                        definition.welcomeMessage(),
+                        definition.interests()
+                ))
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public BotDefinitionSnapshot getActiveBotDefinitionByEmail(String email) {
+        if (email == null || email.isBlank()) {
+            return null;
+        }
+        return getActiveBotDefinitionsSnapshot().stream()
+                .filter(definition -> definition.email().equalsIgnoreCase(email))
+                .findFirst()
+                .orElse(null);
     }
 
     private void matchBotsWithExistingUsers(boolean force) {
@@ -463,6 +487,30 @@ public class BotPopulationService {
 
     private boolean isBotEmail(String email) {
         return getActiveBotDefinitions().stream().anyMatch(def -> def.email().equalsIgnoreCase(email));
+    }
+
+    private void ensureBotCliqueMatches(List<BotProfileDefinition> configuredBots) {
+        List<User> activeBots = configuredBots.stream()
+                .map(definition -> userRepository.findByEmail(definition.email()).orElse(null))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        if (activeBots.size() < 2) {
+            return;
+        }
+
+        for (int i = 0; i < activeBots.size(); i++) {
+            for (int j = i + 1; j < activeBots.size(); j++) {
+                User botA = activeBots.get(i);
+                User botB = activeBots.get(j);
+                try {
+                    matchService.processSwipe(botA.getId(), botB.getId(), com.example.biblov1.model.UserSwipe.SwipeType.LIKE);
+                    matchService.processSwipe(botB.getId(), botA.getId(), com.example.biblov1.model.UserSwipe.SwipeType.LIKE);
+                } catch (Exception ex) {
+                    logger.warn("Failed to ensure bot clique match between {} and {}: {}", botA.getEmail(), botB.getEmail(), ex.getMessage());
+                }
+            }
+        }
     }
 
     private User createOrUpdateBotUser(BotProfileDefinition definition) {
@@ -1022,4 +1070,11 @@ public class BotPopulationService {
     private record SocialLinks(String github, String linkedin, String instagram) {}
 
     private record BotSeedContext(BotProfileDefinition definition, User user) {}
+
+    public record BotDefinitionSnapshot(
+            String name,
+            String email,
+            String welcomeMessage,
+            List<String> interests
+    ) {}
 }

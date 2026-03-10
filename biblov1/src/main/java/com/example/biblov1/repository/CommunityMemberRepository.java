@@ -18,6 +18,8 @@ public interface CommunityMemberRepository extends JpaRepository<CommunityMember
     Optional<CommunityMember> findByCommunityAndUser(Community community, User user);
     @Query("select cm.community.id from CommunityMember cm where cm.user.id = :userId")
     List<Long> findCommunityIdsByUserId(@Param("userId") Long userId);
+    @Query("select cm.user.id from CommunityMember cm where cm.community.id = :communityId")
+    List<Long> findUserIdsByCommunityId(@Param("communityId") Long communityId);
     long countByCommunity(Community community);
     long countByUser(User user);
 } 

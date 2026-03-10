@@ -15,6 +15,8 @@ import com.example.biblov1.repository.UserRepository;
 import com.example.biblov1.repository.LikeRepository;
 import com.example.biblov1.payload.response.PostResponse;
 import com.example.biblov1.payload.response.CommentResponse;
+import com.example.biblov1.service.events.PostCreatedEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,6 +44,7 @@ public class PostService {
     private final LikeRepository likeRepository;
     private final CommentService commentService;
     private final FileStorageService fileStorageService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Autowired
     public PostService(
@@ -53,7 +56,8 @@ public class PostService {
             UserRepository userRepository,
             LikeRepository likeRepository,
             CommentService commentService,
-            FileStorageService fileStorageService
+            FileStorageService fileStorageService,
+            ApplicationEventPublisher eventPublisher
     ) {
         this.postRepository = postRepository;
         this.communityRepository = communityRepository;
@@ -64,6 +68,7 @@ public class PostService {
         this.likeRepository = likeRepository;
         this.commentService = commentService;
         this.fileStorageService = fileStorageService;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -84,7 +89,9 @@ public class PostService {
         post.setContent(content);
         post.setImageUrl(imageUrl);
         post.setHashtags(hashtags);
-        return postRepository.save(post);
+        Post createdPost = postRepository.save(post);
+        eventPublisher.publishEvent(new PostCreatedEvent(createdPost.getId(), authorId, communityId));
+        return createdPost;
     }
 
     @Transactional(readOnly = true)

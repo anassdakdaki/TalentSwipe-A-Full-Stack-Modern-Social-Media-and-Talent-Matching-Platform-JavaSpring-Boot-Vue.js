@@ -9,6 +9,7 @@ import com.example.biblov1.payload.response.MessageResponse;
 import com.example.biblov1.repository.UserRepository;
 import com.example.biblov1.repository.UserProfileRepository;
 import com.example.biblov1.config.security.jwt.JwtUtils;
+import com.example.biblov1.service.BotPopulationService;
 import com.example.biblov1.service.UserDetailsImpl;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,6 +46,9 @@ public class AuthController {
 
     @Autowired
     JwtUtils jwtUtils;
+
+    @Autowired
+    BotPopulationService botPopulationService;
 
     @PostMapping("/login")
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
@@ -106,6 +110,12 @@ public class AuthController {
             userProfile.setLookingFor(new UserProfile.LookingFor());
             userProfile.setSocialLinks(new UserProfile.SocialLinks());
             userProfileRepository.save(userProfile);
+
+            try {
+                botPopulationService.ensureBotsMatchedWithUser(user.getId());
+            } catch (Exception ex) {
+                logger.warn("Bot auto-match after register skipped for user {}: {}", user.getId(), ex.getMessage());
+            }
             
             logger.info("User and profile registered successfully: {}", signUpRequest.getEmail());
 

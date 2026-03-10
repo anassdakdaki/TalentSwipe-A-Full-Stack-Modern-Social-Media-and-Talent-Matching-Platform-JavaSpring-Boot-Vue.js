@@ -24,14 +24,25 @@ public class MatchService {
     private final UserSwipeRepository userSwipeRepository;
     private final UserRepository userRepository;
     private final ChatService chatService;
+    private final BotIdentityService botIdentityService;
+    private final BotSocialOrchestratorService botSocialOrchestratorService;
     private static final Logger logger = LoggerFactory.getLogger(MatchService.class);
 
     @Autowired
-    public MatchService(StudyMatchRepository studyMatchRepository, UserSwipeRepository userSwipeRepository, UserRepository userRepository, ChatService chatService) {
+    public MatchService(
+            StudyMatchRepository studyMatchRepository,
+            UserSwipeRepository userSwipeRepository,
+            UserRepository userRepository,
+            ChatService chatService,
+            BotIdentityService botIdentityService,
+            BotSocialOrchestratorService botSocialOrchestratorService
+    ) {
         this.studyMatchRepository = studyMatchRepository;
         this.userSwipeRepository = userSwipeRepository;
         this.userRepository = userRepository;
         this.chatService = chatService;
+        this.botIdentityService = botIdentityService;
+        this.botSocialOrchestratorService = botSocialOrchestratorService;
     }
 
     // Method to handle a user's swipe action
@@ -75,6 +86,12 @@ public class MatchService {
         boolean isMatch = false;
         // Check for a match only if the current swipe is a LIKE
         if (swipeType == SwipeType.LIKE) {
+            boolean swipedUserIsBot = botIdentityService.isBotUserId(swipedId);
+            boolean swiperUserIsBot = botIdentityService.isBotUserId(swiperId);
+            if (swipedUserIsBot && !swiperUserIsBot) {
+                upsertSwipe(swiped, swiper, SwipeType.LIKE);
+            }
+
             // Check if the swiped user has also LIKED the swiper user
             Optional<UserSwipe> counterSwipe = userSwipeRepository.findBySwiperAndSwiped(swiped, swiper);
 
@@ -84,6 +101,7 @@ public class MatchService {
                 // Create or find chat room for the new match
                 if (match != null) {
                     chatService.findOrCreateChatRoom(swiper.getId(), swiped.getId(), match);
+                    botSocialOrchestratorService.onUsersMatched(match);
                 }
                 isMatch = true;
             }
@@ -118,6 +136,19 @@ public class MatchService {
             studyMatchRepository.save(match);
         }
         return match;
+    }
+
+    private void upsertSwipe(User swiper, User swiped, SwipeType swipeType) {
+        Optional<UserSwipe> existingSwipe = userSwipeRepository.findBySwiperAndSwiped(swiper, swiped);
+        UserSwipe swipe = existingSwipe.orElseGet(() -> {
+            UserSwipe newSwipe = new UserSwipe();
+            newSwipe.setSwiper(swiper);
+            newSwipe.setSwiped(swiped);
+            return newSwipe;
+        });
+        swipe.setSwipeType(swipeType);
+        swipe.setCreatedAt(LocalDateTime.now());
+        userSwipeRepository.save(swipe);
     }
 
     @Transactional
