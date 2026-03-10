@@ -6,7 +6,7 @@ const VALID_PROFILE_VISIBILITY = ['public', 'connections'];
 export const DEFAULT_APP_SETTINGS = {
   version: 1,
   appearance: {
-    theme: 'futuristic',
+    theme: 'dark',
     compactMode: false,
     reducedMotion: false,
   },

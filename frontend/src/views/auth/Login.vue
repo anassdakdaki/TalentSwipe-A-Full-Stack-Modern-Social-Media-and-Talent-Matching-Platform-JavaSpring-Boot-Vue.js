@@ -1,45 +1,52 @@
 <template>
-  <div class="login-container futuristic-theme">
-    <div class="login-box glassmorphic-card">
-      <h2>Login to Biblo</h2>
-      <form @submit.prevent="handleLogin">
-        <div class="form-group">
-          <label for="email">Email</label>
-          <input
-            type="email"
-            id="email"
-            v-model="email"
-            required
-            placeholder="Enter your email"
-          />
-        </div>
-        <div class="form-group">
-          <label for="password">Password</label>
-          <input
-            type="password"
-            id="password"
-            v-model="password"
-            required
-            placeholder="Enter your password"
-          />
-        </div>
-        <button type="submit" :disabled="loading" class="futuristic-button">
-          {{ loading ? 'Logging in...' : 'Login' }}
-        </button>
-        <p v-if="error" class="error">{{ error }}</p>
-      </form>
-      <p class="register-link">
-        Don't have an account? <router-link to="/auth/register">Register here</router-link>
-      </p>
+  <div class="login-page">
+    <PublicHeader />
+    <div class="login-container futuristic-theme">
+      <div class="login-box glassmorphic-card">
+        <h2>Login to Biblo</h2>
+        <form @submit.prevent="handleLogin">
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input
+              type="email"
+              id="email"
+              v-model="email"
+              required
+              placeholder="Enter your email"
+            />
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input
+              type="password"
+              id="password"
+              v-model="password"
+              required
+              placeholder="Enter your password"
+            />
+          </div>
+          <button type="submit" :disabled="loading" class="futuristic-button">
+            {{ loading ? 'Logging in...' : 'Login' }}
+          </button>
+          <p v-if="error" class="error">{{ error }}</p>
+        </form>
+        <p class="register-link">
+          Don't have an account? <router-link to="/auth/register">Register here</router-link>
+        </p>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
 import axios from 'axios'
+import PublicHeader from '@/components/navigation/PublicHeader.vue';
 
 export default {
   name: 'Login',
+  components: {
+    PublicHeader,
+  },
   data() {
     return {
       email: '',
@@ -83,10 +90,15 @@ export default {
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
 
+.login-page {
+  min-height: 100vh;
+  background: var(--theme-page-background);
+}
+
 .login-container.futuristic-theme {
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); /* Dark gradient background */
   color: #e0e0e0; /* Light text */
-  min-height: 100vh; /* Ensure it takes at least the full viewport height */
+  min-height: calc(100vh - 66px); /* Account for header */
   width: 100%; /* Take full width */
   display: flex;
   justify-content: center;

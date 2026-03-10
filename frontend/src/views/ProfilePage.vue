@@ -204,6 +204,9 @@
           <button type="button" @click="resetProfile" class="reset-button">
             Reset Profile
           </button>
+          <button type="button" @click="deleteAccount" class="delete-account-button" :disabled="loading">
+            Delete Account
+          </button>
           <button type="button" @click="logout" class="logout-button">
             Logout
           </button>
@@ -418,6 +421,46 @@ export default {
     logout() {
       localStorage.removeItem('token');
       this.$router.push('/auth/login');
+    },
+
+    async deleteAccount() {
+      if (this.loading) return;
+
+      const firstConfirm = confirm('This will permanently delete your account and cannot be undone. Continue?');
+      if (!firstConfirm) return;
+
+      const typed = prompt('Type DELETE to confirm account deletion.');
+      if (typed !== 'DELETE') {
+        this.error = 'Account deletion cancelled. Confirmation text did not match.';
+        return;
+      }
+
+      this.loading = true;
+      this.error = null;
+
+      try {
+        const token = localStorage.getItem('token');
+        const meResponse = await axios.get(`${API_BASE_URL}/api/auth/me`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        const currentUserId = meResponse.data?.id;
+        if (!currentUserId) {
+          throw new Error('Could not resolve current user.');
+        }
+
+        await axios.delete(`${API_BASE_URL}/api/users/${currentUserId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        localStorage.removeItem('token');
+        this.$router.push('/auth/login');
+      } catch (error) {
+        console.error('Error deleting account:', error);
+        this.error = error?.response?.data?.error || error?.response?.data || 'Failed to delete account.';
+      } finally {
+        this.loading = false;
+      }
     }
   }
 };
@@ -723,6 +766,7 @@ export default {
 
 .save-button,
 .reset-button,
+.delete-account-button,
 .logout-button {
   border-radius: 12px;
   padding: 10px 16px;
@@ -748,6 +792,12 @@ export default {
   border: none;
   background: var(--theme-button-danger-bg);
   color: var(--theme-button-danger-text);
+}
+
+.delete-account-button {
+  border: 1px solid color-mix(in srgb, var(--theme-danger) 70%, var(--theme-surface-border));
+  background: color-mix(in srgb, var(--theme-danger) 14%, transparent);
+  color: var(--theme-danger);
 }
 
 .save-button:disabled {

@@ -1,75 +1,82 @@
 <template>
-  <div class="register-container futuristic-theme">
-    <div class="register-box glassmorphic-card">
-      <h2>Create Account</h2>
-      <form @submit.prevent="handleRegister" name="registerForm" autocomplete="on">
-        <div class="form-group">
-          <label for="name">Name</label>
-          <input
-            type="text"
-            id="name"
-            name="name"
-            v-model="name"
-            required
-            autocomplete="name"
-            placeholder="Enter your name"
-          />
-        </div>
-        <div class="form-group">
-          <label for="email">Email</label>
-          <input
-            type="email"
-            id="email"
-            name="email"
-            v-model="email"
-            required
-            autocomplete="email"
-            placeholder="Enter your email"
-          />
-        </div>
-        <div class="form-group">
-          <label for="password">Password</label>
-          <input
-            type="password"
-            id="password"
-            name="password"
-            v-model="password"
-            required
-            autocomplete="new-password"
-            placeholder="Enter your password"
-            minlength="6"
-          />
-        </div>
-        <div class="form-group">
-          <label for="confirmPassword">Confirm Password</label>
-          <input
-            type="password"
-            id="confirmPassword"
-            name="confirmPassword"
-            v-model="confirmPassword"
-            required
-            autocomplete="new-password"
-            placeholder="Confirm your password"
-            minlength="6"
-          />
-        </div>
-        <button type="submit" :disabled="loading || !isFormValid" class="futuristic-button">
-          {{ loading ? 'Creating Account...' : 'Register' }}
-        </button>
-        <p v-if="error" class="error">{{ error }}</p>
-      </form>
-      <p class="login-link">
-        Already have an account? <router-link to="/auth/login">Login here</router-link>
-      </p>
+  <div class="register-page">
+    <PublicHeader />
+    <div class="register-container futuristic-theme">
+      <div class="register-box glassmorphic-card">
+        <h2>Create Account</h2>
+        <form @submit.prevent="handleRegister" name="registerForm" autocomplete="on">
+          <div class="form-group">
+            <label for="name">Name</label>
+            <input
+              type="text"
+              id="name"
+              name="name"
+              v-model="name"
+              required
+              autocomplete="name"
+              placeholder="Enter your name"
+            />
+          </div>
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              v-model="email"
+              required
+              autocomplete="email"
+              placeholder="Enter your email"
+            />
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              v-model="password"
+              required
+              autocomplete="new-password"
+              placeholder="Enter your password"
+              minlength="6"
+            />
+          </div>
+          <div class="form-group">
+            <label for="confirmPassword">Confirm Password</label>
+            <input
+              type="password"
+              id="confirmPassword"
+              name="confirmPassword"
+              v-model="confirmPassword"
+              required
+              autocomplete="new-password"
+              placeholder="Confirm your password"
+              minlength="6"
+            />
+          </div>
+          <button type="submit" :disabled="loading || !isFormValid" class="futuristic-button">
+            {{ loading ? 'Creating Account...' : 'Register' }}
+          </button>
+          <p v-if="error" class="error">{{ error }}</p>
+        </form>
+        <p class="login-link">
+          Already have an account? <router-link to="/auth/login">Login here</router-link>
+        </p>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
 import axios from 'axios'
+import PublicHeader from '@/components/navigation/PublicHeader.vue';
 
 export default {
   name: 'Register',
+  components: {
+    PublicHeader,
+  },
   data() {
     return {
       name: '',
@@ -172,10 +179,15 @@ export default {
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
 
+.register-page {
+  min-height: 100vh;
+  background: var(--theme-page-background);
+}
+
 .register-container.futuristic-theme {
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); /* Dark gradient background */
   color: #e0e0e0; /* Light text */
-  min-height: 100vh; /* Ensure it takes at least the full viewport height */
+  min-height: calc(100vh - 66px); /* Account for header */
   width: 100%; /* Take full width */
   display: flex;
   justify-content: center;

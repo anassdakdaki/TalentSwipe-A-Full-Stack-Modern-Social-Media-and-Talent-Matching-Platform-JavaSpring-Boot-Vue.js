@@ -11,4 +11,6 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     List<Message> findByChatRoomOrderByTimestampAsc(ChatRoom chatRoom);
 
     List<Message> findTop30ByChatRoomInAndSender_IdNotOrderByTimestampDesc(List<ChatRoom> chatRooms, Long senderId);
+
+    boolean existsByChatRoom_IdAndSender_Id(Long chatRoomId, Long senderId);
 } 

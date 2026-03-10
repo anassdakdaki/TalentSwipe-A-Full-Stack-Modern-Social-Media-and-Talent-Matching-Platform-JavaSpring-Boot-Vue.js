@@ -18,6 +18,11 @@ import AppLayout from '../components/AppLayout.vue'
 
 const routes = [
   {
+    path: '/',
+    name: 'Home',
+    component: Home
+  },
+  {
     path: '/auth/login',
     name: 'Login',
     component: Login
@@ -87,15 +92,8 @@ const routes = [
     ]
   },
   {
-    path: '/',
-    redirect: (to) => {
-      const isAuthenticated = !!localStorage.getItem('token');
-      if (isAuthenticated) {
-        return { path: '/authenticated' };
-      } else {
-        return { name: 'Login' };
-      }
-    }
+    path: '/:pathMatch(.*)*',
+    redirect: '/'
   }
 ]
 
@@ -111,6 +109,11 @@ router.beforeEach(async (to, from, next) => {
   
   if (requiresAuth && !isAuthenticated) {
     next({ name: 'Login' })
+    return
+  }
+
+  if (to.name === 'Home' && isAuthenticated) {
+    next({ path: '/authenticated' })
     return
   }
 

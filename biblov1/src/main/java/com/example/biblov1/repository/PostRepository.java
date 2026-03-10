@@ -38,6 +38,15 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             @Param("cursorPostId") Long cursorPostId,
             Pageable pageable
     );
+    @Query("""
+            select p from Post p
+            where p.author.id not in :excludedAuthorIds
+            order by p.createdAt desc, p.id desc
+            """)
+    List<Post> findRecentPostsByAuthorIdsNotIn(
+            @Param("excludedAuthorIds") List<Long> excludedAuthorIds,
+            Pageable pageable
+    );
     long countByCommunity(Community community);
     long countByAuthor(User author);
 } 

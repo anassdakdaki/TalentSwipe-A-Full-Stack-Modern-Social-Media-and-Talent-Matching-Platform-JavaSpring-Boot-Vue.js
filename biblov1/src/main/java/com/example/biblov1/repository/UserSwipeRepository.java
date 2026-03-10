@@ -11,6 +11,7 @@ import java.util.Optional;
 @Repository
 public interface UserSwipeRepository extends JpaRepository<UserSwipe, Long> {
     Optional<UserSwipe> findBySwiperAndSwiped(User swiper, User swiped);
+    Optional<UserSwipe> findBySwiper_IdAndSwiped_Id(Long swiperId, Long swipedId);
 
     List<UserSwipe> findBySwiper(User swiper);
 

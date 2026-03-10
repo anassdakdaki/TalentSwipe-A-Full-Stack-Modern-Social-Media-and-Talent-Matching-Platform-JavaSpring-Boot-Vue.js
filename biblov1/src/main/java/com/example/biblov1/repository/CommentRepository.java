@@ -18,6 +18,7 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     }
 
     List<Comment> findByPostOrderByCreatedAtAsc(Post post);
+    boolean existsByPostAndAuthor(Post post, User author);
     boolean existsByPostAndAuthorAndContent(Post post, User author, String content);
     List<Comment> findTop10ByAuthorOrderByCreatedAtDesc(User author);
     long countByAuthor(User author);
