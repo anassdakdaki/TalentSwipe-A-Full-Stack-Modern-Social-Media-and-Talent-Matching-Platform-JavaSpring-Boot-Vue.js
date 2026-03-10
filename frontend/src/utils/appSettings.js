@@ -1,10 +1,11 @@
 const SETTINGS_STORAGE_KEY = 'biblov_app_settings_v1';
+const CURRENT_SETTINGS_VERSION = 2;
 
 const VALID_THEMES = ['futuristic', 'modern', 'dark'];
 const VALID_PROFILE_VISIBILITY = ['public', 'connections'];
 
 export const DEFAULT_APP_SETTINGS = {
-  version: 1,
+  version: CURRENT_SETTINGS_VERSION,
   appearance: {
     theme: 'dark',
     compactMode: false,
@@ -38,6 +39,22 @@ function normalizeTheme(themeValue) {
   return VALID_THEMES.includes(themeValue)
     ? themeValue
     : DEFAULT_APP_SETTINGS.appearance.theme;
+}
+
+function resolveThemeForVersion(source) {
+  const rawTheme = source?.appearance?.theme;
+
+  // Migration rule for pre-v2 data:
+  // - Old default was futuristic, new default is dark.
+  // - Preserve explicit modern/dark user choices.
+  if (!source || typeof source !== 'object' || (source.version ?? 1) < CURRENT_SETTINGS_VERSION) {
+    if (rawTheme === 'modern' || rawTheme === 'dark') {
+      return rawTheme;
+    }
+    return 'dark';
+  }
+
+  return normalizeTheme(rawTheme);
 }
 
 function normalizeProfileVisibility(value) {
@@ -76,9 +93,9 @@ export function mergeWithDefaults(partialSettings) {
   }
 
   const source = partialSettings;
-  merged.version = 1;
+  merged.version = CURRENT_SETTINGS_VERSION;
 
-  merged.appearance.theme = normalizeTheme(source.appearance?.theme);
+  merged.appearance.theme = resolveThemeForVersion(source);
   merged.appearance.compactMode = normalizeBoolean(
     source.appearance?.compactMode,
     merged.appearance.compactMode

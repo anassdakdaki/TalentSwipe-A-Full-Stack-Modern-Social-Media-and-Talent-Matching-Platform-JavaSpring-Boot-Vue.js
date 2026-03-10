@@ -4,6 +4,7 @@
     <div class="login-container futuristic-theme">
       <div class="login-box glassmorphic-card">
         <h2>Login to Biblo</h2>
+        <p v-if="successMessage" class="success">{{ successMessage }}</p>
         <form @submit.prevent="handleLogin">
           <div class="form-group">
             <label for="email">Email</label>
@@ -52,7 +53,13 @@ export default {
       email: '',
       password: '',
       loading: false,
-      error: null
+      error: null,
+      successMessage: ''
+    }
+  },
+  mounted() {
+    if (this.$route.query.registered === '1') {
+      this.successMessage = 'Account created successfully. Please log in.'
     }
   },
   methods: {
@@ -194,6 +201,17 @@ input:focus {
   padding: 10px;
   background-color: rgba(255, 82, 82, 0.1);
   border-radius: 8px;
+}
+
+.success {
+  color: #58e2b7;
+  margin: 0 0 14px;
+  text-align: center;
+  font-size: 0.95rem;
+  padding: 10px;
+  background-color: rgba(88, 226, 183, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(88, 226, 183, 0.3);
 }
 
 .register-link {

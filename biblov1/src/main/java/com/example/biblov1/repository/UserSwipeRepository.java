@@ -14,6 +14,7 @@ public interface UserSwipeRepository extends JpaRepository<UserSwipe, Long> {
     Optional<UserSwipe> findBySwiper_IdAndSwiped_Id(Long swiperId, Long swipedId);
 
     List<UserSwipe> findBySwiper(User swiper);
+    void deleteBySwiperOrSwiped(User swiper, User swiped);
 
     boolean existsBySwiper_IdAndSwiped_IdAndSwipeType(Long swiperId, Long swipedId, SwipeType swipeType);
 }

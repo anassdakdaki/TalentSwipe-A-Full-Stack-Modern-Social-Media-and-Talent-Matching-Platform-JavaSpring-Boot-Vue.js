@@ -67,13 +67,17 @@
           </div>
 
           <div class="post-actions">
-            <button @click="toggleLike(post)" class="action-button minimal-button">
-              <i :class="[post.isLiked ? 'fas' : 'far', 'fa-heart', { liked: post.isLiked }]" />
-              Like <span v-if="post.likesCount > 0">({{ post.likesCount }})</span>
+            <button
+              @click="toggleLike(post)"
+              class="action-button minimal-button"
+              :disabled="post.liking"
+            >
+              <i :class="[post.isLiked ? 'fas' : 'far', 'fa-heart']" />
+              <span>{{ post.isLiked ? 'Liked' : 'Like' }} ({{ post.likesCount }})</span>
             </button>
-            <button @click="toggleComments(post)" class="action-button minimal-button">
+            <button @click="ensureCommentsLoaded(post)" class="action-button minimal-button">
               <i class="far fa-comment"></i>
-              {{ post.showComments ? 'Hide comments' : 'Comment' }}
+              <span>Comments ({{ post.commentsCount }})</span>
             </button>
             <button class="action-button minimal-button"><i class="fas fa-share-alt"></i> Share</button>
             <button
@@ -86,9 +90,11 @@
             </button>
           </div>
 
-          <div v-if="post.showComments" class="comments-section">
+          <div class="comments-section">
             <div class="comment-list">
-              <div v-if="post.comments && post.comments.length > 0">
+              <p v-if="post.commentsLoading" class="no-comments-message">Loading comments...</p>
+              <p v-else-if="post.commentsError" class="comments-error">{{ post.commentsError }}</p>
+              <div v-else-if="post.comments && post.comments.length > 0">
                 <div v-for="comment in post.comments" :key="comment.id" class="comment-item">
                   <button
                     type="button"
@@ -308,17 +314,28 @@ export default {
     },
     async fetchPosts() {
       this.loadingPosts = true;
+      this.postError = null;
       try {
         const token = localStorage.getItem('token');
         const response = await axios.get(`${API_BASE_URL}/api/posts/community/${this.communityId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        this.posts = response.data.map((post) => ({
-          ...post,
-          showComments: false,
-          comments: post.comments || [],
-          newCommentContent: '',
-        }));
+        this.posts = (response.data || []).map((post) => {
+          const comments = Array.isArray(post.comments) ? post.comments : [];
+          return {
+            ...post,
+            likesCount: Number(post.likesCount || 0),
+            isLiked: Boolean(post.isLiked),
+            comments,
+            commentsCount: comments.length,
+            commentsLoaded: true,
+            commentsLoading: false,
+            commentsError: '',
+            newCommentContent: '',
+            commentSubmitting: false,
+            liking: false,
+          };
+        });
       } catch (error) {
         this.postError = 'Failed to load posts.';
         console.error('Error fetching posts:', error);
@@ -406,17 +423,10 @@ export default {
       this.postAlertMessage = message;
       this.$refs.postAlert.show();
     },
-    async toggleComments(post) {
-      post.showComments = !post.showComments;
-      if (post.showComments && (!post.comments || post.comments.length === 0)) {
-        await this.fetchCommentsForPost(post);
-      }
-    },
     async ensureCommentsLoaded(post) {
-      if (post.showComments && post.comments && post.comments.length > 0) {
+      if (post.commentsLoaded || post.commentsLoading) {
         return;
       }
-      post.showComments = true;
       await this.fetchCommentsForPost(post);
     },
     async fetchCommentsForPost(post) {
@@ -424,15 +434,21 @@ export default {
         this.showPostAlert('Login Required', 'You must be logged in to view comments.');
         return;
       }
+      post.commentsLoading = true;
+      post.commentsError = '';
       try {
         const token = localStorage.getItem('token');
         const response = await axios.get(`${API_BASE_URL}/api/comments/post/${post.id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         post.comments = Array.isArray(response.data) ? response.data : [];
+        post.commentsCount = post.comments.length;
+        post.commentsLoaded = true;
       } catch (error) {
         console.error(`Error fetching comments for post ${post.id}:`, error);
-        this.showPostAlert('Error', `Failed to load comments for post: ${error.response?.data?.error || error.message}`);
+        post.commentsError = error.response?.data?.error || error.message || 'Failed to load comments.';
+      } finally {
+        post.commentsLoading = false;
       }
     },
     async toggleLike(post) {
@@ -441,15 +457,26 @@ export default {
         return;
       }
 
+      if (post.liking) {
+        return;
+      }
+
+      post.liking = true;
       try {
         const token = localStorage.getItem('token');
-        await axios.post(`${API_BASE_URL}/api/likes/post/${post.id}`, {}, {
+        const response = await axios.post(`${API_BASE_URL}/api/likes/post/${post.id}`, {}, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        await this.fetchPosts();
+        const newIsLiked = Boolean(response?.data?.isLiked);
+        if (newIsLiked !== post.isLiked) {
+          post.likesCount = Math.max(0, post.likesCount + (newIsLiked ? 1 : -1));
+        }
+        post.isLiked = newIsLiked;
       } catch (error) {
         console.error('Error toggling like:', error);
         this.showPostAlert('Error', `Failed to toggle like: ${error.response?.data?.error || error.message}`);
+      } finally {
+        post.liking = false;
       }
     },
     async addComment(post) {
@@ -470,7 +497,6 @@ export default {
           headers: { Authorization: `Bearer ${token}` },
         });
         post.newCommentContent = '';
-        post.showComments = true;
         await this.fetchCommentsForPost(post);
       } catch (error) {
         console.error('Error adding comment:', error);
@@ -636,26 +662,26 @@ export default {
 }
 
 .posts-grid {
-  width: min(700px, 100%);
+  width: min(620px, 100%);
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 .post-card {
   border: 1px solid var(--theme-surface-border);
   background: var(--theme-surface-elevated);
-  border-radius: 18px;
+  border-radius: 14px;
   box-shadow: var(--theme-shadow-soft);
-  padding: 18px;
+  padding: 14px;
 }
 
 .post-header {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .author-button {
@@ -665,7 +691,7 @@ export default {
   padding: 0;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   cursor: pointer;
   text-align: left;
 }
@@ -676,8 +702,8 @@ export default {
 
 .post-avatar-image,
 .post-avatar {
-  width: 38px;
-  height: 38px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
 }
 
@@ -697,39 +723,42 @@ export default {
 .author-info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
 }
 
 .post-author {
   font-weight: 700;
+  font-size: 0.98rem;
   color: var(--theme-heading-color);
 }
 
 .post-date {
   color: var(--theme-text-subtle);
-  font-size: 0.84rem;
+  font-size: 0.8rem;
 }
 
 .post-content {
-  margin: 0 0 12px;
+  margin: 0 0 8px;
   color: var(--theme-text-secondary);
   white-space: pre-wrap;
-  line-height: 1.55;
+  line-height: 1.45;
+  font-size: 0.97rem;
 }
 
 .post-image {
   width: 100%;
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 16 / 9;
+  max-height: 320px;
   object-fit: cover;
-  border-radius: 12px;
+  border-radius: 10px;
   border: 1px solid var(--theme-surface-border);
 }
 
 .post-hashtags {
-  margin-top: 12px;
+  margin-top: 8px;
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
 }
 
 .tag-pill {
@@ -742,11 +771,16 @@ export default {
   font-weight: 600;
 }
 
+.post-hashtags .tag-pill {
+  padding: 4px 8px;
+  font-size: 0.78rem;
+}
+
 .post-actions {
-  margin-top: 12px;
+  margin-top: 8px;
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
 }
 
 .action-button {
@@ -759,6 +793,17 @@ export default {
   cursor: pointer;
 }
 
+.post-card .action-button {
+  border-radius: 10px;
+  padding: 7px 10px;
+  font-size: 0.9rem;
+}
+
+.post-card .action-button:disabled {
+  opacity: 0.72;
+  cursor: not-allowed;
+}
+
 .minimal-button {
   display: inline-flex;
   align-items: center;
@@ -769,7 +814,7 @@ export default {
   color: var(--theme-accent);
 }
 
-.minimal-button i.liked {
+.minimal-button .fas.fa-heart {
   color: var(--theme-accent-strong);
 }
 
@@ -783,27 +828,27 @@ export default {
 }
 
 .comments-section {
-  margin-top: 14px;
-  padding-top: 12px;
+  margin-top: 10px;
+  padding-top: 10px;
   border-top: 1px solid var(--theme-divider);
 }
 
 .comment-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  max-height: 220px;
-  overflow-y: auto;
+  gap: 6px;
+  max-height: none;
+  overflow: visible;
 }
 
 .comment-item {
   border: 1px solid var(--theme-surface-border);
   border-radius: 10px;
   background: var(--theme-surface-1);
-  padding: 8px 10px;
+  padding: 7px 9px;
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  gap: 7px;
 }
 
 .comment-author-button {
@@ -877,11 +922,16 @@ export default {
   text-align: center;
 }
 
+.comments-error {
+  color: var(--theme-danger);
+  text-align: center;
+}
+
 .comment-input-area {
-  margin-top: 10px;
+  margin-top: 8px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .comment-input {
@@ -890,7 +940,7 @@ export default {
   border-radius: 10px;
   background: var(--theme-input-bg);
   color: var(--theme-input-text);
-  padding: 10px 12px;
+  padding: 8px 10px;
 }
 
 .comment-input:focus {
@@ -1042,6 +1092,14 @@ html[data-theme='futuristic'] .hero-content h1 {
 @media (max-width: 760px) {
   .community-detail-page {
     padding: 14px 10px 92px;
+  }
+
+  .posts-grid {
+    width: 100%;
+  }
+
+  .post-image {
+    max-height: 240px;
   }
 
   .post-actions,

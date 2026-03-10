@@ -16,6 +16,7 @@ public interface CommunityMemberRepository extends JpaRepository<CommunityMember
     List<CommunityMember> findByUser(User user);
     List<CommunityMember> findTop10ByUserOrderByJoinedAtDesc(User user);
     Optional<CommunityMember> findByCommunityAndUser(Community community, User user);
+    void deleteByCommunity(Community community);
     @Query("select cm.community.id from CommunityMember cm where cm.user.id = :userId")
     List<Long> findCommunityIdsByUserId(@Param("userId") Long userId);
     @Query("select cm.user.id from CommunityMember cm where cm.community.id = :communityId")

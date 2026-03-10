@@ -14,8 +14,10 @@ import java.util.List;
 
 @Repository
 public interface PostRepository extends JpaRepository<Post, Long> {
+    List<Post> findByCommunity(Community community);
     List<Post> findByCommunityOrderByCreatedAtDesc(Community community);
     List<Post> findByCommunityAndAuthorOrderByCreatedAtDesc(Community community, User author);
+    void deleteByCommunity(Community community);
     List<Post> findTop10ByAuthorOrderByCreatedAtDesc(User author);
     @Query("""
             select p from Post p

@@ -1,14 +1,17 @@
 <template>
   <header class="top-nav">
-    <form class="search-wrap" @submit.prevent="submitSearch">
+    <form v-if="showSearch" class="search-wrap" @submit.prevent="submitSearch">
       <i class="fas fa-search"></i>
       <input
         v-model.trim="searchQuery"
         type="search"
-        placeholder="Search communities, people, posts"
+        :placeholder="searchPlaceholder"
         aria-label="Search"
       />
     </form>
+    <div v-else class="context-label" aria-live="polite">
+      {{ pageLabel }}
+    </div>
 
     <div class="top-actions">
       <button
@@ -61,6 +64,18 @@ export default {
       type: String,
       default: '',
     },
+    showSearch: {
+      type: Boolean,
+      default: true,
+    },
+    searchPlaceholder: {
+      type: String,
+      default: 'Search communities, people, posts',
+    },
+    pageLabel: {
+      type: String,
+      default: 'Workspace',
+    },
   },
   emits: ['search', 'toggle-notifications', 'logout'],
   data() {
@@ -77,6 +92,9 @@ export default {
   },
   methods: {
     submitSearch() {
+      if (!this.showSearch) {
+        return;
+      }
       this.$emit('search', this.searchQuery);
     },
     logout() {
@@ -127,6 +145,15 @@ export default {
   align-items: center;
   gap: 8px;
   padding: 0 10px;
+}
+
+.context-label {
+  flex: 1;
+  min-width: 180px;
+  color: var(--theme-heading-color);
+  font-weight: 700;
+  font-size: clamp(1.02rem, 1.6vw, 1.22rem);
+  letter-spacing: 0.01em;
 }
 
 .search-wrap i {
