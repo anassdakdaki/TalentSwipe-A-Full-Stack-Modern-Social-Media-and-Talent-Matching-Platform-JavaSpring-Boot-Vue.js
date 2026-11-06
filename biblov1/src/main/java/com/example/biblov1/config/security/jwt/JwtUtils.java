@@ -59,7 +59,7 @@ public class JwtUtils {
 
     public boolean validateJwtToken(String authToken) {
         try {
-            logger.debug("Validating JWT token: {}", authToken.substring(0, 20) + "...");
+            logger.debug("Validating JWT token");
             Jwts.parserBuilder()
                 .setSigningKey(key())
                 .build()
@@ -80,4 +80,4 @@ public class JwtUtils {
 
         return false;
     }
-} 
+}
