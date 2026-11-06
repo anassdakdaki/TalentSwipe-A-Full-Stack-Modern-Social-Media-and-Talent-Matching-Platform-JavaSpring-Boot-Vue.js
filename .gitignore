@@ -5,3 +5,14 @@ DB_PASSWORD_REDACTED
 # Local env files (if created at repo root)
 .env
 *.env
+
+# Dependencies and generated output
+node_modules/
+target/
+dist/
+*.log
+__pycache__/
+
+# Local configuration
+.env.local
+.env.*.local

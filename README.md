@@ -1,129 +1,70 @@
-# Biblo
+# TalentSwipe
 
-**Biblo** is a comprehensive full-stack application designed to connect learners and collaborators through social features, study communities, and real‑time communication. It combines a robust Spring Boot API with a modern Vue.js frontend to deliver a responsive and secure user experience.
+A social learning app for finding study partners, joining communities, sharing posts, and chatting with matches. Built with Java 21, Spring Boot 3, Vue 3, and MySQL.
 
----
+The source uses the earlier project name **Biblo**, including the backend directory and Java package names.
 
-## 🚀 Overview
-Biblo addresses the needs of students and professionals looking to form study groups, share resources, and network with peers who have similar interests and skills. The platform supports:
+## Features
 
-- User profiles enriched with skills, interests, and social links.
-- Creation and discovery of topic‑focused communities.
-- Post feeds with hashtags, media attachments, and community scopes.
-- A Tinder‑style swipe interface for matching study partners, with integrated chat rooms.
-- Secure authentication and authorization using JSON Web Tokens (JWT).
-- File upload capability for profile images and post attachments.
+- Profiles with skills, interests, projects, and experience.
+- Swipe-based discovery and mutual-like matching.
+- Community membership, post feeds, comments, and likes.
+- JWT authentication, chat rooms, and media uploads.
+- Seeded demo content and configurable bot activity for local development.
 
-Architecturally, Biblo is divided into two main components:
+## Run locally
 
-1. **Backend (`biblov1/`)** – A Spring Boot 3 application powered by MySQL for persistence, exposing a RESTful API under `/api`.
-2. **Frontend (`frontend/`)** – A Vue 3 single‑page application built with Vite, consuming the API and rendering a mobile‑friendly UI.
+You need Java 21, Node.js 20+, and MySQL 8. The backend includes a Maven wrapper.
 
-Uploads are stored in the top‑level `uploads/` directory and served statically by the backend.
+### Backend
 
----
+1. Open a terminal in `biblov1/`.
+2. Copy `.env.example` to `.env.local`.
+3. Set your database credentials and replace `APP_JWT_SECRET` with a unique Base64-encoded key of at least 32 random bytes. For example: `openssl rand -base64 32`.
+4. Run `./mvnw spring-boot:run` (Windows: `.\mvnw.cmd spring-boot:run`).
 
-## 🗂️ Project Structure
-- `biblov1/` – Java source, resources, Maven wrapper, and server configuration.
-- `frontend/` – Vue components, assets, build configuration, and tests.
-- `uploads/` – Shared directory for user‑uploaded files (images, documents).
+The API runs at http://localhost:8080. The application loads `.env.local` from its working directory; OS environment variables take precedence. Hibernate updates the local schema on startup. Uploads are written relative to that working directory unless `UPLOAD_DIR` is set.
 
----
+### Frontend
 
-## 🛠️ Prerequisites
-Before running the application, ensure your development environment includes:
+Open a second terminal in `frontend/`:
 
-- **Java 21** and **Maven** (the project includes the Maven wrapper).
-- **Node.js 20+** with **npm**.
-- **MySQL 8+** (default connection string `jdbc:mysql://localhost:3306/biblov1`).
-- Available network ports: `8080` (API) and `5173` (frontend development server).
+```sh
+npm ci
+npm run dev
+```
 
----
+Open http://localhost:5173. Copy `frontend/.env.example` to `frontend/.env.local` if you need to change `VITE_API_BASE_URL`.
 
-## 🧩 Backend Setup & Development
-1. Navigate to the backend directory:
-   ```bash
-   cd biblov1
-   ```
-2. Configure database and application settings in `src/main/resources/application.properties`:
-   ```properties
-   spring.datasource.url=jdbc:mysql://localhost:3306/biblov1
-   spring.datasource.username=youruser
-   spring.datasource.password=yourpass
-   app.jwtSecret=changeme
-   app.upload.dir=uploads
-   ```
-3. Start the application:
-   ```bash
-   ./mvnw spring-boot:run   # (or mvnw.cmd on Windows)
-   ```
+## Repository layout
 
-- The JPA provider handles schema migration (`spring.jpa.hibernate.ddl-auto=update`).
-- Uploaded files save to `biblov1/uploads` and are accessible via `/uploads/**`.
-- Execute unit and integration tests with `./mvnw test`.
+| Directory | Purpose |
+| --- | --- |
+| `biblov1/` | Spring Boot API, persistence, configuration, and integration tests |
+| `frontend/` | Vue application, styles, and Playwright tests |
+| `uploads/`, `biblov1/uploads/` | Existing development media |
 
----
+## Checks
 
-## 🖥️ Frontend Setup & Development
-1. Change into the frontend directory and install dependencies:
-   ```bash
-   cd frontend
-   npm install
-   ```
-2. Run the development server:
-   ```bash
-   npm run dev    # available at http://localhost:5173
-   ```
-3. Build for production:
-   ```bash
-   npm run build
-   npm run preview    # preview the production bundle locally
-   ```
+Run from `biblov1/`:
 
-Important notes:
-- API base URL is determined in `src/main.js` from the `VITE_API_BASE_URL` environment variable (default: `http://localhost:8080`).
-- Example environment file: `frontend/.env.example`.
-- Linting: `npm run lint`.
-- End‑to‑end tests are powered by Playwright:
-  ```bash
-  npx playwright install   # first time only
-  npm run test:e2e
-  ```
+```sh
+./mvnw test
+```
 
----
+Run from `frontend/`:
 
-## 📡 API Endpoints (Quick Reference)
-Base URL: `http://localhost:8080/api`
+```sh
+npm run build
+npm run lint
+npx playwright install
+npm run test:e2e
+```
 
-| Area | Endpoint | Description |
-|------|----------|-------------|
-| Auth | `POST /auth/register` | Register new user |
-|      | `POST /auth/login` | Authenticate (returns JWT) |
-|      | `GET /auth/me` | Get current user info |
-| Communities | `GET /communities` | List communities |
-|             | `POST /communities` | Create a community |
-|             | `/communities/{id}/join`<br>`/leave` | Manage membership |
-| Posts       | `POST /posts` | Create post (supports `imageFile`, `hashtags`, `communityId`) |
-|             | `GET /posts/{id}` | Retrieve post |
-|             | `GET /posts/community/{communityId}` | Community feed |
-| Others      | Comment, like, skill management, matching, chat controllers are located under `<backend>/src/main/java/com/example/biblov1/controller/` |
+See [TESTING.md](TESTING.md) for backend test configuration. The integration tests use an in-memory H2 database.
 
-Refer to the source code for complete request/response schemas.
+## Development notes
 
----
+This is a development project. Review authentication, upload handling, logging, CORS, and database migration strategy before deployment. Demo bot activity is enabled by default; set `APP_BOTS_SOCIAL_ENABLED=false` to disable it.
 
-## 🛡️ Deployment & Production Considerations
-- **Security**: Do not commit sensitive values (database credentials, `app.jwtSecret`) to version control. Use environment variables or a secrets manager.
-- **CORS**: The current configuration allows all origins for development. Restrict it appropriately in production.
-- **Uploads**: Adjust the upload directory and size limits (`spring.servlet.multipart.max-file-size`) if deploying to a cloud storage or shared filesystem.
-
----
-
-## 🤝 Contributing
-Contributions are welcome! Please fork the repository, create a feature branch, and submit a pull request with a clear description of changes.
-
----
-
-## Support
-
-For questions, bug reports, or feature requests, open an issue in this repository.
+Keep local credentials out of Git. Previously committed credentials must be rotated even after their files are removed.
