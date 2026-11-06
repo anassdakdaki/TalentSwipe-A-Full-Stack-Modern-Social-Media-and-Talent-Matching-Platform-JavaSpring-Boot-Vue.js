@@ -124,10 +124,6 @@ Contributions are welcome! Please fork the repository, create a feature branch, 
 
 ---
 
-## 📞 Support & Contact
-For questions or feedback, open an issue or reach out to the maintainer at `maintainer@example.com`.
+## Support
 
-
----
-
-*Last updated: February 28, 2026.*
+For questions, bug reports, or feature requests, open an issue in this repository.
